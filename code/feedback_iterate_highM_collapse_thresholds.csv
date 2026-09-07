@@ -1,0 +1,11 @@
+M,condition,collapse_noise_percent
+2000,initial_acc,40.0
+2000,final_acc,42.0
+3000,initial_acc,40.0
+3000,final_acc,42.0
+5000,initial_acc,40.0
+5000,final_acc,42.0
+7000,initial_acc,40.0
+7000,final_acc,42.0
+10000,initial_acc,40.0
+10000,final_acc,40.0

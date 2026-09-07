@@ -1,0 +1,15 @@
+M,condition,collapse_noise_percent
+50,no_feedback,45.0
+50,with_feedback,45.0
+100,no_feedback,45.0
+100,with_feedback,45.0
+200,no_feedback,42.0
+200,with_feedback,45.0
+500,no_feedback,42.0
+500,with_feedback,45.0
+1000,no_feedback,42.0
+1000,with_feedback,45.0
+1500,no_feedback,42.0
+1500,with_feedback,42.0
+2000,no_feedback,40.0
+2000,with_feedback,42.0

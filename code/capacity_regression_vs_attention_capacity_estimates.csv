@@ -1,0 +1,21 @@
+noise_percent,readout,estimated_capacity_M
+0.0,regression,1000
+0.0,attention,>= 2000 (not reached)
+2.0,regression,< 10
+2.0,attention,>= 2000 (not reached)
+5.0,regression,< 10
+5.0,attention,>= 2000 (not reached)
+10.0,regression,< 10
+10.0,attention,>= 2000 (not reached)
+15.0,regression,< 10
+15.0,attention,>= 2000 (not reached)
+20.0,regression,< 10
+20.0,attention,>= 2000 (not reached)
+30.0,regression,< 10
+30.0,attention,>= 2000 (not reached)
+50.0,regression,< 10
+50.0,attention,< 10
+75.0,regression,< 10
+75.0,attention,< 10
+100.0,regression,< 10
+100.0,attention,< 10
