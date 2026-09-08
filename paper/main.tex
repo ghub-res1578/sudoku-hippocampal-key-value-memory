@@ -221,6 +221,27 @@ query noise, regression vs.\ attention readout.}
 \label{fig:capacity}
 \end{figure}
 
+\subsection{Graceful degradation under query noise}
+\label{sec:graceful-noise}
+
+Table~\ref{tab:readout} reports accuracy at a few noise levels; the full curve
+(Figure~\ref{fig:feedback-noise}, $M=200$) shows the shape of that degradation, and the
+benefit of the conflict-mask cleanup pass introduced in Section~2.1. Accuracy is perfect up
+to $35\%$ of engram bits flipped, then declines smoothly -- not catastrophically -- over a
+narrow window ($35$--$48\%$) before settling at chance. The cleanup pass consistently rescues
+accuracy inside this transition window (e.g.\ $63.1\%$ vs.\ $49.0\%$ at $42\%$ noise;
+$95.8\%$ vs.\ $88.9\%$ at $40\%$), exactly where it matters -- outside this window either the
+query is already easy (no rescue needed) or already unrecoverable (nothing to rescue).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/hippocampus_feedback_noise_clean.png}
+\caption{Digit-cell retrieval accuracy vs.\ query noise, with and without the conflict-mask
+cleanup pass. Degradation is graceful (a narrow transition window, not a cliff), and cleanup
+measurably rescues accuracy specifically inside that window.}
+\label{fig:feedback-noise}
+\end{figure}
+
 \subsection{Partial-grid pattern completion}
 
 Cueing the architecture with a partial grid (only some cells known) and running the
@@ -450,6 +471,33 @@ this is qualitatively consistent with genuine error-correction behavior -- rescu
 where the initial guess was substantially wrong -- rather than a uniform accuracy shift, and
 is why the (large, obvious) mean improvement over the initial guess does not always translate
 into a formally significant paired test at $n=20$.
+
+\subsection{Graceful degradation under drive-current noise}
+\label{sec:drive-noise}
+
+Sections~\ref{sec:graceful-noise} and \ref{sec:emergent} both test robustness to
+\emph{missing} information (query bit-flips; unknown cells). We separately tested robustness
+to \emph{corrupted} information specific to the spiking mechanism: rather than any cell being
+entirely unknown, every known cell's drive current itself was perturbed with Gaussian jitter
+before driving the network (clue fraction fixed at $0.30$; unknown cells still use the
+associative engram's own guess, unperturbed; $n=20$ trials/point, paired across noise
+levels). Figure~\ref{fig:drive-noise} shows the result: accuracy declines smoothly as
+current noise grows from $0$ to over twice the spacing between adjacent digit levels, with no
+sign of a cliff. Notably, even at the highest tested noise ($\sigma$ equal to $2.2\times$ the
+inter-digit spacing -- comparable to smearing a query halfway to its neighboring digit level
+on average) the dynamics pipeline ($58.1\%$) still exceeds the noise-free symbolic-guess
+baseline it is compared against ($51.9\%$): the mechanism does not merely tolerate drive
+noise gracefully, it remains a net improvement over the associative engram's own single-shot
+guess even when its input is substantially corrupted.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\linewidth]{figures/spiking_drive_noise_clean.png}
+\caption{Unknown-cell accuracy vs.\ Gaussian drive-current noise (clue fraction $0.30$),
+compared against the noise-free symbolic-guess baseline. Degradation is smooth, and the
+dynamics pipeline stays above baseline throughout the tested range.}
+\label{fig:drive-noise}
+\end{figure}
 
 \subsection{Why low clue fractions are hard: signal quality, not signal quantity}
 
