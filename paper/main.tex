@@ -225,20 +225,24 @@ query noise, regression vs.\ attention readout.}
 \label{sec:graceful-noise}
 
 Table~\ref{tab:readout} reports accuracy at a few noise levels; the full curve
-(Figure~\ref{fig:feedback-noise}, $M=200$) shows the shape of that degradation, and the
-benefit of the conflict-mask cleanup pass introduced in Section~2.1. Accuracy is perfect up
-to $35\%$ of engram bits flipped, then declines smoothly -- not catastrophically -- over a
-narrow window ($35$--$48\%$) before settling at chance. The cleanup pass consistently rescues
-accuracy inside this transition window (e.g.\ $63.1\%$ vs.\ $49.0\%$ at $42\%$ noise;
-$95.8\%$ vs.\ $88.9\%$ at $40\%$), exactly where it matters -- outside this window either the
-query is already easy (no rescue needed) or already unrecoverable (nothing to rescue).
+(Figure~\ref{fig:feedback-noise}, left, $M=200$) shows the shape of that degradation, and
+the benefit of the conflict-mask cleanup pass introduced in Section~2.1. Accuracy is perfect
+up to $35\%$ of engram bits flipped, then declines smoothly -- not catastrophically -- over a
+narrow window before settling at chance by ${\sim}48\%$. A finer sweep restricted to that
+window (Figure~\ref{fig:feedback-noise}, right; $1$ percentage-point steps, $100$
+trials/point) resolves the transition in detail and shows the cleanup pass's rescue effect
+peaks sharply at $42\%$ noise ($59.3\%$ vs.\ $42.5\%$ without cleanup, a $+16.8$
+percentage-point gain) and tapers off on both sides -- negligible above $46\%$, where both
+curves have already collapsed to chance, and shrinking again below $\sim39\%$, where the
+uncleaned query is already accurate enough that there is little left to rescue.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.75\linewidth]{figures/hippocampus_feedback_noise_clean.png}
+\includegraphics[width=\linewidth]{figures/hippocampus_feedback_noise_zoomed.png}
 \caption{Digit-cell retrieval accuracy vs.\ query noise, with and without the conflict-mask
-cleanup pass. Degradation is graceful (a narrow transition window, not a cliff), and cleanup
-measurably rescues accuracy specifically inside that window.}
+cleanup pass. Left: full range (shaded band marks the zoomed window). Right: the $35$--$55\%$
+transition resolved at $1$ percentage-point resolution, showing the rescue effect peaking at
+$42\%$ noise.}
 \label{fig:feedback-noise}
 \end{figure}
 

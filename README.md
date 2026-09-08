@@ -71,12 +71,18 @@ PNG used in Figure 1. Runtime: ~15-20 min (sweeps $M\in\{10,\dots,2000\}$).
 
 ### Section 3.3 -- Graceful degradation under query noise (Fig. 2)
 ```bash
-python3 hippocampus_drive_readout.py       # writes hippocampus_drive_readout_feedback_sweep.csv
-python3 hippocampus_feedback_noise_plot.py # regenerates Figure 2 from that CSV
+python3 hippocampus_drive_readout.py        # writes hippocampus_drive_readout_feedback_sweep.csv
+                                             #   (full 0-100% sweep, coarse steps)
+python3 hippocampus_feedback_noise_zoomed.py  # reconstructs the same engram, re-sweeps just
+                                               #   35-55% at 1pp resolution, and writes the
+                                               #   two-panel Figure 2 (needs the CSV above)
 ```
-Full 0-100% query-noise sweep, with and without the conflict-mask cleanup pass, at $M=200$.
-Runtime: a few minutes (`hippocampus_drive_readout.py` also runs the capacity/robustness spot
-checks used elsewhere in the paper).
+Full 0-100% query-noise sweep, with and without the conflict-mask cleanup pass, at $M=200$;
+the zoomed script resolves the 35-55% transition window at 1-percentage-point resolution and
+is what the rescue-peak number ($42\%$ noise, $+16.8$pp) in the text comes from. Runtime: a
+few minutes for each (`hippocampus_drive_readout.py` also runs the capacity/robustness spot
+checks used elsewhere in the paper). `hippocampus_feedback_noise_plot.py` regenerates the
+old single-panel version of Figure 2's left panel alone, if useful for other purposes.
 
 ### Section 3.4 -- Partial-grid pattern completion (Table 3, Fig. 3)
 ```bash
