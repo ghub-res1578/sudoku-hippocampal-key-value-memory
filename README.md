@@ -12,13 +12,15 @@ pipeline.
 
 Section 4 extends the engram layer to a second modality (natural images, heteroassociated to
 Sudoku engrams via the same bidirectional pseudo-inverse rule used by Vector-HaSH) and
-benchmarks it against classical Hopfield networks on identical data. The result is
-double-edged and reported as such: a paired nearest-neighbor baseline shows the pipeline is
-*not* yet more accurate than trivial pixel-space classification at small stored-set sizes, but
-on the specific property Vector-HaSH is built to provide (graceful, not catastrophic,
-degradation), our architecture succeeds where classical and even pseudo-inverse-trained
-Hopfield networks -- the latter using the identical learning rule -- collapse to zero recovery
-an order of magnitude sooner.
+benchmarks it against classical Hopfield networks on identical data, with a single shared
+noise model across all four methods. The result is double-edged and reported as such: a
+paired nearest-neighbor baseline beats the pipeline at every stored-set size tested, and the
+gap widens (not closes) as that size grows, from +3.5pp at M=200 to +96.0pp at M=2000 -- an
+honest negative result, not just an untested caveat. But on the specific property Vector-HaSH
+is built to provide (graceful, not catastrophic, degradation under scale), our architecture
+succeeds where classical and even pseudo-inverse-trained Hopfield networks -- the latter using
+the identical learning rule, and statistically tied with ours in noise tolerance at fixed
+storage size -- collapse to zero recovery an order of magnitude sooner in storage capacity.
 
 Read the paper first: `paper/main.pdf`. Everything below reproduces its tables and figures.
 
@@ -180,7 +182,7 @@ python3 spiking_low_clue_diagnostic_fixedweight.py
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
 
-### Section 4 -- Cross-modal heteroassociation (Tables 7-8, Figs. 8-10)
+### Section 4 -- Cross-modal heteroassociation (Tables 7-10, Figs. 8-10)
 
 Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
 `tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
@@ -197,8 +199,14 @@ python3 heteroassoc_final_consolidation.py       # Table 7 (rigorous, N=200/poin
                                                   #   Section 4.3's k-NN baseline/McNemar test +
                                                   #   Section 4.4's capacity/conditioning/ridge
                                                   #   diagnostics -- Figure 9
+python3 heteroassoc_knn_vs_M.py                  # Table 8: does the k-NN gap close as M grows?
+                                                  #   (no -- it widens from +3.5pp at M=200 to
+                                                  #   +96.0pp at M=2000), paired McNemar per M
 python3 heteroassoc_ridge_scaling_with_M.py      # does a single ridge value keep working as M
-                                                  #   grows further? (Discussion, Limitations)
+                                                  #   grows? (M up to 2000)
+python3 heteroassoc_ridge_scaling_extended.py    # Table 9: extends the above to M=2500-4000 --
+                                                  #   lambda~10 stays near-optimal throughout,
+                                                  #   does not need to keep growing
 python3 heteroassoc_H_K_sweep.py                 # does bigger H or K help noise robustness?
 python3 heteroassoc_H_extends_capacity.py        # does bigger H extend the M-scaling ceiling?
                                                   #   (isolates the image-side vs. engram-side
@@ -206,19 +214,27 @@ python3 heteroassoc_H_extends_capacity.py        # does bigger H extend the M-sc
 python3 heteroassoc_cifar_capacity.py            # same capacity diagnostic, CIFAR-100 grayscale
 python3 hopfield_classic_cliff_reference.py      # sanity check: reproduces the textbook
                                                   #   random-pattern Hopfield cliff (M/N~0.138)
-python3 hopfield_vs_our_network_comparison.py    # Table 8, Figure 10: the four-way comparison
-                                                  #   (classical/covariance/pseudo-inverse
-                                                  #   Hopfield vs. our network) on identical
-                                                  #   MNIST images
-python3 hopfield_pinv_basin_shrinkage.py         # supplementary: pseudo-inverse Hopfield's
-                                                  #   basin-of-attraction shrinkage under a
-                                                  #   fixed 5% bit-flip at M=100/150/200
-                                                  #   (100%/25%/0% exact, Section 4.5 text)
+python3 hopfield_vs_our_network_comparison.py    # original bit-flip-vs-Gaussian comparison --
+                                                  #   superseded as the paper's headline number by
+                                                  #   the matched-noise version below, but still
+                                                  #   the source of the M=100/150/200 pseudo-
+                                                  #   inverse basin-shrinkage illustration in the
+                                                  #   Section 4.5 text
+python3 hopfield_pinv_basin_shrinkage.py         # standalone reproduction of that same
+                                                  #   illustration (100%/25%/0% exact)
+python3 hopfield_matched_noise_rigorous.py       # Table 10, Figure 10: the headline four-way
+                                                  #   comparison, redone with N=200/point, Wilson
+                                                  #   CIs, and a SINGLE shared noise model (every
+                                                  #   method sees the same Gaussian-corrupted
+                                                  #   image; the three Hopfield variants get it
+                                                  #   bipolarized) -- this is what the paper
+                                                  #   reports, not the script above
 ```
 Runtime: most of these build an M-item store from scratch per configuration and are a few
-seconds to low minutes each; `heteroassoc_final_consolidation.py` and
-`heteroassoc_H_extends_capacity.py` sweep several $M$ values with $N{=}200$ or $N{=}50$-$60$
-trials/point and take several minutes.
+seconds to low minutes each; `heteroassoc_final_consolidation.py`, `heteroassoc_knn_vs_M.py`,
+and `hopfield_matched_noise_rigorous.py` sweep several $M$/noise values at $N{=}200$/point and
+take several minutes; `heteroassoc_ridge_scaling_extended.py` builds stores up to $M{=}4000$
+and can take 10+ minutes.
 
 ## Core modules
 
