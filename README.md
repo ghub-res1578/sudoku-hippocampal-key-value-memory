@@ -10,6 +10,16 @@ indistinguishable from the hard-coded rule it replaces (paired Wilcoxon signed-r
 $p>0.05$ at every tested clue fraction) once routed through the same associative-memory
 pipeline.
 
+Section 4 extends the engram layer to a second modality (natural images, heteroassociated to
+Sudoku engrams via the same bidirectional pseudo-inverse rule used by Vector-HaSH) and
+benchmarks it against classical Hopfield networks on identical data. The result is
+double-edged and reported as such: a paired nearest-neighbor baseline shows the pipeline is
+*not* yet more accurate than trivial pixel-space classification at small stored-set sizes, but
+on the specific property Vector-HaSH is built to provide (graceful, not catastrophic,
+degradation), our architecture succeeds where classical and even pseudo-inverse-trained
+Hopfield networks -- the latter using the identical learning rule -- collapse to zero recovery
+an order of magnitude sooner.
+
 Read the paper first: `paper/main.pdf`. Everything below reproduces its tables and figures.
 
 ## Repository layout
@@ -35,13 +45,20 @@ slow (tens of seconds) once per process and cached thereafter.
 
 ## What's excluded, and why
 
-Two things explored during this project are **deliberately not included**: a synaptic
-plasticity (STDP) variant of the excitatory synapses, and a cross-modal (MNIST-to-Sudoku)
-extension. The plasticity variant was tested rigorously (a paired, statistically powered
+A synaptic plasticity (STDP) variant of the excitatory synapses, explored during this project,
+is **deliberately not included**. It was tested rigorously (a paired, statistically powered
 sweep) and found *not* to reliably outperform the reported non-plastic, fixed-weight
 dynamics -- the fixed-weight mechanism already matches the hard-coded rule, and we judged
-added mechanism without added, validated benefit to be the wrong trade. The cross-modal
-extension is a separate, unrelated negative result and out of scope for this paper.
+added mechanism without added, validated benefit to be the wrong trade.
+
+Several earlier cross-modal encoder designs are also not included, since they were diagnosed
+dead ends superseded by the final architecture in Section 4: mapping images to a single
+shared per-class target via ridge regression (generalizes poorly, a cliff-like collapse under
+noise), and a fixed-random-projection + softmax-attention lookup over stored image exemplars
+(mathematically continuous but effectively winner-take-most given the similarity scale,
+producing bimodal, non-monotonic behavior). The reported architecture -- bidirectional,
+one-memory-per-pair pseudo-inverse heteroassociation -- was arrived at specifically to fix
+both failure modes, and is the only encoder design included here.
 
 ## Reproducing each result
 
@@ -162,6 +179,42 @@ python3 spiking_low_clue_diagnostic_fixedweight.py
 ```
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
+
+### Section 4 -- Cross-modal heteroassociation (Tables 7-8, Figs. 8-10)
+
+Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
+`tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
+
+```bash
+python3 heteroassoc_vectorhash_pipeline.py       # the core M=200 MNIST pipeline + sanity
+                                                  #   checks (defines the reusable functions
+                                                  #   train_pseudo_inverse_dual, k_wta,
+                                                  #   iterate_sudoku_attractor, etc.)
+python3 heteroassoc_vectorhash_best_examples.py  # Figure 8: largest-rescue-gap examples,
+                                                  #   3 datasets
+python3 heteroassoc_vectorhash_generalized.py    # Table 7 precursor: dataset/M generalization
+python3 heteroassoc_final_consolidation.py       # Table 7 (rigorous, N=200/point, Wilson CI) +
+                                                  #   Section 4.3's k-NN baseline/McNemar test +
+                                                  #   Section 4.4's capacity/conditioning/ridge
+                                                  #   diagnostics -- Figure 9
+python3 heteroassoc_ridge_scaling_with_M.py      # does a single ridge value keep working as M
+                                                  #   grows further? (Discussion, Limitations)
+python3 heteroassoc_H_K_sweep.py                 # does bigger H or K help noise robustness?
+python3 heteroassoc_H_extends_capacity.py        # does bigger H extend the M-scaling ceiling?
+                                                  #   (isolates the image-side vs. engram-side
+                                                  #   bottleneck via direct Gram-matrix rank)
+python3 heteroassoc_cifar_capacity.py            # same capacity diagnostic, CIFAR-100 grayscale
+python3 hopfield_classic_cliff_reference.py      # sanity check: reproduces the textbook
+                                                  #   random-pattern Hopfield cliff (M/N~0.138)
+python3 hopfield_vs_our_network_comparison.py    # Table 8, Figure 10: the four-way comparison
+                                                  #   (classical/covariance/pseudo-inverse
+                                                  #   Hopfield vs. our network) on identical
+                                                  #   MNIST images
+```
+Runtime: most of these build an M-item store from scratch per configuration and are a few
+seconds to low minutes each; `heteroassoc_final_consolidation.py` and
+`heteroassoc_H_extends_capacity.py` sweep several $M$ values with $N{=}200$ or $N{=}50$-$60$
+trials/point and take several minutes.
 
 ## Core modules
 

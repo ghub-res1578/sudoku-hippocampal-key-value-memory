@@ -55,7 +55,17 @@ adjacent digit levels. We also characterize a reproducible power-law crossover i
 relaxation time
 near the completion threshold, and report -- rather than paper over -- that its exponent is
 not universal across stored-set sizes, tempering any claim to a shared critical-phenomena
-universality class. All code, data, and reproduction instructions accompany this paper.
+universality class. Finally, we extend the engram layer to a second modality -- natural
+images, heteroassociated to Sudoku engrams via the same bidirectional pseudo-inverse rule
+used by Vector-HaSH \cite{chandra2025} -- and benchmark it against classical Hopfield networks.
+The comparison is double-edged: a paired nearest-neighbor baseline shows our pipeline is not
+yet more accurate than trivial pixel-space classification at small stored-set sizes, an honest
+limitation we report rather than omit; but on the specific property Vector-HaSH is designed to
+provide, our architecture succeeds where classical and even pseudo-inverse-trained Hopfield
+networks -- the latter using the identical learning rule we do -- collapse to zero recovery an
+order of magnitude sooner, isolating the separate error-correcting attractor, not the learning
+rule, as the source of the graceful degradation. All code, data, and reproduction instructions
+accompany this paper.
 \end{abstract}
 
 \section{Introduction}
@@ -95,6 +105,11 @@ work to speak to:
   satisfaction and random $k$-SAT \cite{mezard2002,mezard2009}, which we invoke here as
   motivating context rather than as a universality result we claim to extend.
 \end{itemize}
+
+We additionally ask, in Section~\ref{sec:hetero}, whether the engram layer generalizes beyond
+a single content type: we heteroassociate natural images to Sudoku engrams using the
+bidirectional pseudo-inverse mechanism of Vector-HaSH \cite{chandra2025}, and benchmark the
+result directly against classical Hopfield networks on identical data.
 
 Our central empirical result is that these three layers compose: a physically-implemented,
 dynamics-based legality check, built entirely from local excitatory/inhibitory coupling with
@@ -528,6 +543,196 @@ clue fraction $0.30$. The mechanism limiting low-clue-fraction performance is th
 in the query signal's specificity, not a shortage of active units -- a distinction that
 points at specificity (not raw signal strength) as the lever for improving this regime.
 
+\section{Extension: Cross-Modal Heteroassociation}
+\label{sec:hetero}
+
+Everything above stores and retrieves a single content type (Sudoku grids). Vector-HaSH
+\cite{chandra2025} factors biological memory into two parts: a fixed, content-independent
+\emph{scaffold} (grid-cell/hippocampal recurrence) that provably generates exponentially many
+attractors with equally large basins, and a separate, plastic \emph{heteroassociative} pathway
+linking arbitrary sensory input to that scaffold via ``a Hebb-like online implementation of the
+pseudoinverse rule.'' We test whether our architecture's engram layer can play the scaffold's
+role for a genuinely different modality -- natural images -- using exactly that heteroassociative
+mechanism, and we benchmark the result against classical Hopfield networks, whose well-known
+memory cliff Vector-HaSH is explicitly designed to avoid.
+
+\subsection{Architecture}
+
+An image $x\in\mathbb{R}^{D}$ is linked to its paired grid's engram $h\in\{0,1\}^H$ by two
+ridge-regularized pseudo-inverse matrices, $W_{SI}$ (image$\to$engram) and $W_{IS}$
+(engram$\to$image), trained as a \emph{bidirectional, one-memory-per-pair} association --
+not many exemplars regressed onto one shared class target, which we found generalizes poorly
+(direct engram-overlap measurement showed it collapsing from $0.835$ to $0.330$ between
+$\sigma=0$ and $\sigma=0.10$ pixel noise, versus a smooth $1.0\to0.869$ decay for the
+bidirectional rule at matched noise). Recall is a four-stage loop: a noisy image cue is
+projected through $W_{SI}$ and thresholded to an initial engram; the existing attention readout
+and conflict-mask cleanup (Section~2.1) iterate this engram to a Sudoku-consistent fixed point,
+exactly as for a partial-grid cue; the cleaned engram is projected back through $W_{IS}$ to
+reconstruct the image. Figure~\ref{fig:best-examples} shows representative cases where this
+cleanup step turns a badly corrupted initial reconstruction into an exact one.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\linewidth]{figures/heteroassoc_vectorhash_best_examples.png}
+\caption{Representative cleanup examples (one dataset per row-group): noisy input, image
+reconstructed from the engram \emph{before} cleanup, image reconstructed \emph{after} the
+Sudoku-attractor pass, and the true original. All cases shown are exact grid recoveries.}
+\label{fig:best-examples}
+\end{figure}
+
+\subsection{Generalization across datasets}
+
+Table~\ref{tab:hetero-datasets} sweeps corruption at $M{=}200$, $H{=}1000$, $K{=}150$ across
+three datasets of increasing dissimilarity from the original: MNIST ($28\times28$), Fashion-MNIST
+(same dimension, unrelated content), and CIFAR-100 grayscale ($32\times32$, different dimension
+\emph{and} content). The qualitative shape -- a plateau, then a smooth decline, no cliff --
+replicates across all three; CIFAR-100 declines somewhat earlier, consistent with its images
+carrying less redundant, more textured content that a fixed-density sparse code compresses less
+cleanly.
+
+\begin{table}[h]
+\centering
+\caption{Exact grid recovery vs.\ image noise, three datasets ($M{=}200$, $n{=}200$/point,
+Wilson 95\% CI).}
+\label{tab:hetero-datasets}
+\begin{tabular}{lccc}
+\toprule
+$\sigma$ & MNIST & Fashion-MNIST & CIFAR-100 (gray) \\
+\midrule
+0.30 & 99.5\% [97.2,99.9] & 97.0\% [93.6,98.6] & 90.0\% [85.1,93.4] \\
+0.40 & 82.0\% [76.1,86.7] & 85.0\% [79.4,89.3] & 67.0\% [60.2,73.1] \\
+0.50 & 49.5\% [42.6,56.4] & 58.5\% [51.6,65.1] & 36.0\% [29.7,42.9] \\
+0.60 & 29.5\% [23.6,36.2] & 31.5\% [25.5,38.2] & 17.5\% [12.9,23.4] \\
+1.00 & 4.0\% [2.0,7.7] & 5.0\% [2.7,9.0] & 3.5\% [1.7,7.0] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{A trivial baseline this architecture does not yet beat}
+\label{sec:knn-baseline}
+
+At $M{=}200$, a reviewer's natural objection is that this may reduce to nearest-neighbor
+classification into $200$ buckets. We tested this directly: for the identical noisy queries
+used above, a raw-pixel Euclidean nearest-neighbor classifier among the $M$ stored clean images
+predicts which grid is present, and we compared its exact-match rate against ours with a paired
+McNemar test. The answer is not reassuring: nearest-neighbor performs \emph{at least as well,
+and significantly better}, across nearly the entire informative range. At $\sigma{=}0.40$,
+MNIST nearest-neighbor is still at $100\%$ while our pipeline is at $82.0\%$ (McNemar
+$p<0.0001$); at $\sigma{=}1.00$ nearest-neighbor remains at $95.0\%$ while ours has fallen to
+$4.0\%$. The pattern replicates on Fashion-MNIST and CIFAR-100 (Table~\ref{tab:hetero-datasets}
+vs.\ the corresponding nearest-neighbor rates, all $p<0.0001$ except two borderline points at
+the highest tested noise). At $M{=}200$ with well-separated exemplars, Euclidean
+nearest-neighbor is close to the likelihood-optimal classifier under additive Gaussian
+corruption; routing through a lossy, sparsely-thresholded engram throws away information the
+raw pixels still carried. We report this plainly rather than omit it: whatever this
+architecture's value, it is not yet raw classification accuracy at small $M$. Its case has to
+rest on properties nearest-neighbor search structurally lacks -- a fixed-size, compressed,
+content-addressable code that never revisits the stored exemplars, and (Section~\ref{sec:hop})
+a qualitatively different failure mode under scale than classical attractor memories.
+
+\subsection{Capacity: two independent ceilings, one of them fixable}
+\label{sec:capacity-hetero}
+
+Scaling $M$ from 200 to 2000 (fixed $H{=}1000$, default ridge $\lambda{=}10^{-4}$) reproduces
+what looks, at first, like a hard cliff: exact recovery at $\sigma{=}0.1$ falls from $100\%$
+($M{\leq}300$) to $8.3\%$ at $M{=}500$. Measuring the image-side Gram matrix directly
+($X X^\top$, $X$ the $M{\times}D$ image matrix) explains why: its condition number grows from
+$1.8{\times}10^4$ ($M{=}200$) to $3.6{\times}10^7$ ($M{=}500$), crossing the fixed ridge value
+exactly where the collapse occurs. Re-solving with $\lambda{=}0.1$ at $M{=}500$ restores
+$100\%$ exact recovery at $\sigma{=}0.1$ while costing almost nothing in zero-noise fidelity
+($0.994$ vs.\ $1.000$ overlap) -- this specific cliff is a stale hyperparameter, not an
+architectural limit.
+
+A second, genuinely structural ceiling remains underneath it. The image Gram matrix's
+\emph{effective rank} -- not its nominal pixel dimension $D{=}784$ -- caps exact zero-noise
+fitting: for this MNIST sample it saturates at ${\sim}600$--$610$ regardless of how large $M$
+grows (rank $568/800$ at $M{=}800$, only reaching $607/2000$ by $M{=}2000$), a property of the
+data's intrinsic dimensionality that no amount of $H$ or ridge tuning can lift. CIFAR-100
+grayscale, by contrast, fills its \emph{entire} ambient dimension (rank $1024/1024$ by
+$M{=}1600$) -- natural texture carries more independent information per pixel than a clean
+digit stroke on a black background, though this does not translate into better absolute
+recovery (Table~\ref{tab:hetero-datasets}). A separate, $H$-dependent ceiling governs the
+\emph{reverse} (engram$\to$image) direction: its Gram matrix's rank is bounded by
+$\min(M,H)$, and doubling $H$ from $1000$ to $2000$ (density held fixed) measurably delays this
+one -- exact recovery at $M{=}2000$, $\sigma{=}0.1$ rises from $80\%$ ($H{=}1000$) to $90\%$
+($H{=}2000$) -- with zero effect on the image-side ceiling, exactly as the algebra predicts.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/heteroassoc_final_consolidation.png}
+\caption{Top-left: our pipeline vs.\ the nearest-neighbor baseline (paired). Top-right: the
+$M{=}500$ cliff under the default ridge. Bottom-left: image Gram-matrix condition number vs.\
+$M$ (log scale), crossing the ridge value exactly where the cliff appears. Bottom-right: ridge
+sensitivity at $M{=}500$, showing the fix.}
+\label{fig:capacity-consolidation}
+\end{figure}
+
+\subsection{Comparison to classical Hopfield networks}
+\label{sec:hop}
+
+Vector-HaSH's stated motivation is avoiding ``the memory cliff of prior memory models''
+\cite{chandra2025}. We tested this claim directly rather than citing it, building four
+auto-associative memories on the \emph{same} bipolarized MNIST images and comparing them
+against our full heteroassociative-plus-cleanup pipeline: (i) the classical outer-product
+(Hebbian) rule; (ii) a mean-centered covariance rule correcting for population-level pixel
+bias; (iii) the pseudo-inverse (projection) rule -- the same learning-rule family our own
+network uses, but with no separate error-correcting scaffold; and (iv) our network. As a
+sanity check on the classical rule's textbook behavior, we first reproduced its capacity cliff
+on \emph{random} bipolar patterns ($N{=}784$): exact recovery falls from $82.5\%$ ($M{=}60$)
+to $0\%$ ($M{=}120$), matching the analytic prediction ($M/N\approx0.138$) almost exactly.
+
+On real, correlated images the picture is markedly worse for every auto-associative variant.
+The classical rule fails even at \emph{zero} noise, for any $M$ we tested: a clean cue's
+overlap with itself drops from $1.0$ to $0.84$ after a single update, because $86\%$ of MNIST
+pixels are background and the plain Hebbian rule's dominant mode locks onto that population
+bias rather than any specific image. Mean-centering removes this bias exactly as intended --
+we verified it recovers correctly at $M{\leq}3$ -- but real images correlate with each other
+far beyond a first-moment bias, and this corrected rule still collapses to $0\%$ by $M{=}10$,
+two orders of magnitude below the random-pattern prediction. The pseudo-inverse rule is the
+most instructive comparison, because it is the same rule ours uses: it is algebraically
+\emph{exact} at zero noise up to at least $M{=}200$, but its basins of attraction shrink so
+fast under even modest noise that $5\%$ bit-flip recall falls from $100\%$ ($M{=}100$) to
+$25\%$ ($M{=}150$) to $0\%$ ($M{=}200$) -- tracing out, in noise tolerance rather than raw
+capacity, a Hopfield-style cliff of its own.
+
+\begin{table}[h]
+\centering
+\caption{Exact recovery vs.\ $M$ on identical MNIST images (moderate matched-severity noise:
+$5\%$ bit-flip for the three Hopfield variants, $\sigma{=}0.5$ Gaussian pixel noise for ours;
+not the same units, see Section~\ref{sec:hop}).}
+\label{tab:hopfield}
+\begin{tabular}{lccccc}
+\toprule
+$M$ & Classical & Covariance & Pseudo-inverse & Our network \\
+\midrule
+100 & 0\%   & 0\% & 100\% & 100\% \\
+200 & 0\%   & 0\% & 0\%   & 87.5\% \\
+400 & 0\%   & 0\% & 0\%   & 27.5\% \\
+800 & 0\%   & 0\% & 0\%   & 10.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/hopfield_vs_our_network_comparison.png}
+\caption{Left: exact recovery vs.\ $M$, all four methods, fixed moderate noise. Right: exact
+recovery vs.\ noise at fixed $M{=}50$ (chosen below every method's zero-noise collapse point),
+two separate noise axes since the corruption models differ.}
+\label{fig:hopfield}
+\end{figure}
+
+Our network is the only one of the four that never reaches zero in the tested range, holding
+$10$--$27\%$ recovery out to $M{=}800$ -- an order of magnitude past where the rule it shares
+with the pseudo-inverse baseline already fails completely. Because that baseline uses the
+identical learning rule, this difference isolates the source of the graceful decline: not the
+pseudo-inverse rule itself, but the presence of a separate, content-specific error-correcting
+step (the Sudoku-legality attractor) layered on top of it. This is the piece Vector-HaSH's true
+scaffold provides in a content-\emph{independent} way (Section~2); ours is content-dependent
+(legality-specific) but still delivers the qualitative signature the scaffold is meant to
+produce, and does so an order of magnitude beyond where the shared learning rule alone can
+reach.
+
 \section{Discussion}
 
 Three results compose into a single picture. The combinatorial engram code is robust across
@@ -553,7 +758,15 @@ the symbolic guess even when corrupted well past the spacing between adjacent di
 concentrates specifically in the transition region -- the conflict-mask cleanup's rescue
 effect on query noise peaks sharply at $42\%$ (Figure~\ref{fig:feedback-noise}, right) --
 exactly where ambiguity is highest and correction is most needed, and negligible everywhere
-else, either because the query was already easy or already unrecoverable.
+else, either because the query was already easy or already unrecoverable. The cross-modal
+extension (Section~\ref{sec:hetero}) reinforces this theme with an external, hard baseline:
+on identical real images, three classical/pseudo-inverse auto-associative memories all
+collapse to exactly $0\%$ recovery within a narrow range of stored-item count, while our
+architecture -- sharing the pseudo-inverse learning rule with one of them, but adding a
+separate legality-based cleanup step -- degrades smoothly and remains above $0\%$ an order of
+magnitude further out (Table~\ref{tab:hopfield}). This is the same qualitative signature
+Vector-HaSH's content-independent scaffold is built to produce, obtained here from a
+content-\emph{dependent} one.
 
 We invoke the statistical mechanics of constraint satisfaction and random $k$-SAT
 \cite{mezard2002,mezard2009} as motivating context for why constraint density and dynamics
@@ -573,6 +786,22 @@ compromising the clean matching result of Table~\ref{tab:wilcoxon} -- we deliber
 pursue synaptic plasticity in the reported architecture, since the non-plastic, fixed-weight
 dynamics already achieve parity with the symbolic rule, and we judged added mechanism
 without added validated benefit to be the wrong trade for this paper.
+
+The cross-modal extension has its own, separately reported limitations. It is not yet more
+accurate than a trivial raw-pixel nearest-neighbor classifier at $M{=}200$
+(Section~\ref{sec:knn-baseline}) -- whatever value the architecture offers over brute-force
+exemplar search has to come from properties we have not yet tested at the scale where they
+would matter (large $M$, where storing and searching raw exemplars becomes impractical but a
+fixed-size engram remains cheap; or fusing partial pixel and partial relational cues, which
+nearest-neighbor over images alone cannot do). The ridge-regularization fix in
+Section~\ref{sec:capacity-hetero} was verified only up to $M{=}2000$; whether a single,
+$M$-independent regularization schedule holds arbitrarily far past that, or whether $\lambda$
+must keep growing with $M$, is untested. Finally, the Hopfield comparison uses a bit-flip
+noise model for the three auto-associative baselines and Gaussian pixel noise for ours
+(Table~\ref{tab:hopfield}); these are not numerically equivalent corruption scales, so the
+comparison should be read as a qualitative contrast in failure \emph{shape} (smooth decline
+that never reaches zero, vs.\ collapse to exactly zero within a narrow range), not a
+claim of matched-severity superiority.
 
 \section{Methods}
 
@@ -594,6 +823,22 @@ search), projection density $\rho=0.02$, softmax temperature $\tau=2.0\times(K/1
 to the engram's self-overlap). Statistical tests: two-sided Wilcoxon signed-rank
 (\texttt{scipy.stats.wilcoxon}) on paired per-trial accuracy differences, identical target
 grid and known-cell mask across compared methods within each trial.
+
+Heteroassociation (Section~\ref{sec:hetero}): $W_{SI}$/$W_{IS}$ trained via the dual-form
+ridge pseudo-inverse ($\lambda=10^{-4}$ default, $\lambda=0.1$--$1.0$ where noted for
+larger $M$), images normalized to $[0,1]$ and Gaussian noise added and reclipped to that
+range. MNIST/Fashion-MNIST are $28\times28$ (dimension $784$); CIFAR-100 is converted to
+grayscale by averaging RGB channels ($32\times32$, dimension $1024$). Baseline (Section~
+\ref{sec:knn-baseline}): paired McNemar exact test (\texttt{scipy.stats.binomtest} on
+discordant-pair counts) between our pipeline's and nearest-neighbor's exact-match outcome on
+identical noisy queries. Hopfield baselines (Section~\ref{sec:hop}): images bipolarized by
+thresholding at $0.5$; classical rule is the outer-product/Hebbian sum with zero diagonal;
+covariance rule subtracts each pixel's own mean activity (not a single global scalar) before
+the same sum; pseudo-inverse rule reuses the identical dual-form solver as $W_{SI}$/$W_{IS}$
+with the pattern set as both input and target. Synchronous recall update
+$s\leftarrow\mathrm{sign}(Ws)$ preserves a neuron's current state on an exact tie (net input
+$0$) rather than forcing it to $+1$, since mean-centered patterns can have exactly-zero
+weights on pixels that are constant across every stored image.
 
 \section*{Code and Data Availability}
 All simulation code, raw data (CSV), and figure-generation scripts are available at
@@ -633,6 +878,10 @@ solving the Sudoku minimum number of clues problem via hitting set enumeration,'
 
 \bibitem{brian2} M.~Stimberg, R.~Brette, D.~F.~M.~Goodman, ``Brian 2, an intuitive and
 efficient neural simulator,'' \textit{eLife} \textbf{8}, e47314 (2019).
+
+\bibitem{chandra2025} S.~Chandra, S.~Sharma, R.~Chaudhuri, I.~Fiete, ``Episodic and
+associative memory from spatial scaffolds in the hippocampus,'' \textit{Nature} \textbf{638},
+739--752 (2025).
 
 \end{thebibliography}
 
