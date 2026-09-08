@@ -81,13 +81,29 @@ referenced in the text (not required for the headline table). Runtime: ~5-10 min
 ### Section 3.4 -- Relaxation dynamics near the completion threshold (Fig. 3)
 ```bash
 python3 critical_slowing_down_test.py          # original, narrower sweep
-python3 critical_slowing_down_extended.py      # corrected, properly bracketed p_c (Fig. 3)
+python3 critical_slowing_down_extended.py      # extended sweep -- generates the RAW DATA
+                                                #   (critical_slowing_down_extended.csv) used
+                                                #   for Figure 3, but its own built-in
+                                                #   analyze_and_plot() should NOT be used to
+                                                #   make the figure -- see note below
+python3 critical_slowing_down_clean_plot.py    # regenerates Figure 3 correctly from that CSV
 python3 critical_slowing_down_universality.py  # non-universality check across (M,K)
 ```
-`critical_slowing_down_extended.py` is the source of Figure 3 and the $p_c=0.395$,
-$\nu=1.32\pm0.08$ numbers. `critical_slowing_down_universality.py` produces the four
-additional $(M,K)$ fits discussed as an honest negative/mixed finding. Runtime: 15-30 min
-each (200 trials/point for the flagship configuration).
+**Known issue, worth understanding before re-running anything here:**
+`critical_slowing_down_extended.py`'s own `analyze_and_plot()` picks its power-law decay
+branch with an automatic heuristic (`mean_iter < plateau_mean - plateau_std`) that turns out
+to sweep in points that have already hit the floor, biasing the fit to a bogus,
+boundary-pinned $p_c\approx0.85$ -- and separately, its plot-label string still negates the
+fitted slope (a sign bug that was only patched in the script's console `print` output, not in
+the plotting code). **Do not use the PNG that script produces directly.** The correct,
+paper-reported fit ($p_c=0.395$, $\nu=1.32\pm0.08$, $R^2=0.978$) restricts the decay branch by
+hand to clue fraction $\in[0.21,0.37]$ (excluding both the plateau and the floor) and is what
+`critical_slowing_down_clean_plot.py` does, reading the same
+`critical_slowing_down_extended.csv` the first script writes. Run the two in that order.
+`critical_slowing_down_universality.py` produces the four additional $(M,K)$ fits discussed
+as an honest negative/mixed finding. Runtime: 15-30 min each (200 trials/point for the
+flagship configuration); the clean-plot script itself is instant (it only re-fits the
+already-generated CSV).
 
 ### Section 3.5 -- Phase synchrony as an emergent conflict mask (Table 4, Fig. 4)
 ```bash
