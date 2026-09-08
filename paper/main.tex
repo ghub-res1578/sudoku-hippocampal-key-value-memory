@@ -187,11 +187,10 @@ projection density $\rho$ (0.002--1.0), measuring the query-noise level at which
 accuracy collapses. Table~\ref{tab:collapse} reports the collapse threshold (largest tested
 noise level, as a percentage of engram bits flipped, before top-1 accuracy falls off).
 
-\begin{table}[h]
-\centering
-\caption{Collapse-noise threshold, essentially flat across a 200-fold range of $M$
-and across $K,\rho$, except at very small $K$.}
-\label{tab:collapse}
+\refstepcounter{table}\label{tab:collapse}
+\noindent\textbf{Table \thetable.} Collapse-noise threshold, essentially flat across a 200-fold range of $M$
+and across $K,\rho$, except at very small $K$.
+\begin{center}
 \begin{tabular}{lccccc}
 \toprule
  & $M{=}50$ & $M{=}1000$ & $M{=}10{,}000$ & $K{=}10$ & $K{\geq}50$ \\
@@ -199,7 +198,8 @@ and across $K,\rho$, except at very small $K$.}
 Collapse threshold & 45\% & 45\% & 40\% & 25\% & 40--45\% \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
+
 
 Robustness is essentially independent of $M$ over a 200-fold range, and independent
 of connection density over $\rho\in[0.002,1.0]$; the sole exception is engram sparsity itself
@@ -211,10 +211,9 @@ with too few active units per engram leaving little redundancy to survive bit fl
 
 Table~\ref{tab:readout} contrasts the two readouts at $M=1000$ ($=H$) and $M=2000$ ($=2H$).
 
-\begin{table}[h]
-\centering
-\caption{Digit-cell retrieval accuracy, regression vs.\ attention readout.}
-\label{tab:readout}
+\refstepcounter{table}\label{tab:readout}
+\noindent\textbf{Table \thetable.} Digit-cell retrieval accuracy, regression vs.\ attention readout.
+\begin{center}
 \begin{tabular}{lcccc}
 \toprule
 & \multicolumn{2}{c}{$M=1000$} & \multicolumn{2}{c}{$M=2000$} \\
@@ -226,7 +225,8 @@ Query noise & regression & attention & regression & attention \\
 50\%  & 11.2\%  & 11.7\%  & 11.1\%  & 10.7\%  \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
+
 
 Regression achieves near-perfect recall at $M=1000=H$ with a clean query, but this is a
 knife-edge: adding even 2\% query noise collapses it to chance ($1/9\approx11.1\%$), and at
@@ -235,13 +235,13 @@ $M\sim H$. Attention shows no observed ceiling in the tested range and degrades 
 noise exceeds 30--50\%, at either $M$. Figure~\ref{fig:capacity} shows the full capacity
 curve.
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=0.85\linewidth]{figures/capacity_regression_vs_attention_capacity.png}
-\caption{Estimated capacity (largest $M$ retaining accuracy above a fixed threshold) vs.\
-query noise, regression vs.\ attention readout.}
-\label{fig:capacity}
-\end{figure}
+\end{center}
+\refstepcounter{figure}\label{fig:capacity}
+\noindent\textbf{Figure \thefigure.} Estimated capacity (largest $M$ retaining accuracy above a fixed threshold) vs.\
+query noise, regression vs.\ attention readout.
+
 
 \subsection{Graceful degradation under query noise}
 \label{sec:graceful-noise}
@@ -258,15 +258,15 @@ percentage-point gain) and tapers off on both sides -- negligible above $46\%$, 
 curves have already collapsed to chance, and shrinking again below $\sim39\%$, where the
 uncleaned query is already accurate enough that there is little left to rescue.
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=\linewidth]{figures/hippocampus_feedback_noise_zoomed.png}
-\caption{Digit-cell retrieval accuracy vs.\ query noise, with and without the conflict-mask
+\end{center}
+\refstepcounter{figure}\label{fig:feedback-noise}
+\noindent\textbf{Figure \thefigure.} Digit-cell retrieval accuracy vs.\ query noise, with and without the conflict-mask
 cleanup pass. Left: full range (shaded band marks the zoomed window). Right: the $35$--$55\%$
 transition resolved at $1$ percentage-point resolution, showing the rescue effect peaking at
-$42\%$ noise.}
-\label{fig:feedback-noise}
-\end{figure}
+$42\%$ noise.
+
 
 \subsection{Partial-grid pattern completion}
 
@@ -274,11 +274,10 @@ Cueing the architecture with a partial grid (only some cells known) and running 
 conflict-mask attractor loop recovers missing digits with graceful, clue-count-dependent
 accuracy (Table~\ref{tab:completion}, $M=2000$, $K=150$, $H=1000$).
 
-\begin{table}[h]
-\centering
-\caption{Partial-grid completion: unknown-cell accuracy and exact whole-grid match, before
-(single-shot readout) and after (attractor loop) cleanup.}
-\label{tab:completion}
+\refstepcounter{table}\label{tab:completion}
+\noindent\textbf{Table \thetable.} Partial-grid completion: unknown-cell accuracy and exact whole-grid match, before
+(single-shot readout) and after (attractor loop) cleanup.
+\begin{center}
 \begin{tabular}{lcccc}
 \toprule
 Clue fraction & Initial acc.\ & Final acc.\ & Initial exact & Final exact \\
@@ -291,17 +290,18 @@ Clue fraction & Initial acc.\ & Final acc.\ & Initial exact & Final exact \\
 0.70 & 100\%  & 100\%  & 100\% & 100\% \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
+
 
 Figure~\ref{fig:completion} shows the full curve; recovery is negligible below clue fraction
 ${\sim}0.15$, rises steeply through $0.20$--$0.40$, and saturates by $0.5$--$0.7$.
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=0.75\linewidth]{figures/sudoku_partial_grid_completion.png}
-\caption{Partial-grid completion accuracy vs.\ clue fraction.}
-\label{fig:completion}
-\end{figure}
+\end{center}
+\refstepcounter{figure}\label{fig:completion}
+\noindent\textbf{Figure \thefigure.} Partial-grid completion accuracy vs.\ clue fraction.
+
 
 \subsection{Relaxation dynamics near the completion threshold}
 \label{sec:crossover}
@@ -316,14 +316,14 @@ Fitting $p_c$ as a free parameter on the decay branch alone (excluding both the 
 the floor) gives $p_c = 0.395$ -- matching the independently observed floor onset almost
 exactly -- and $\nu = 1.32\pm0.08$ ($R^2=0.978$; Figure~\ref{fig:crossover}).
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=0.95\linewidth]{figures/critical_slowing_down_clean.png}
-\caption{Relaxation-time crossover for the sharpest tested configuration ($M{=}500$,
+\end{center}
+\refstepcounter{figure}\label{fig:crossover}
+\noindent\textbf{Figure \thefigure.} Relaxation-time crossover for the sharpest tested configuration ($M{=}500$,
 $K{=}400$): plateau, power-law decay, and floor regimes (left); order parameter (center);
-log-log power-law fit restricted to the decay branch alone (right).}
-\label{fig:crossover}
-\end{figure}
+log-log power-law fit restricted to the decay branch alone (right).
+
 
 We emphasize an honest limitation here. Repeating this fit for four additional $(M,K)$
 configurations gives exponents ranging from $\nu=0.47$ to $\nu=3.75$ -- an eightfold spread
@@ -353,10 +353,9 @@ essentially identical across eight independently sampled grids (Table~\ref{tab:m
 and visibly forms a clean, reproducible ``phase comb'' each oscillation cycle
 (Figure~\ref{fig:raster}).
 
-\begin{table}[h]
-\centering
-\caption{Steady-state phase offset by pair category, mean $\pm$ s.d.\ across 8 grids.}
-\label{tab:multigrid}
+\refstepcounter{table}\label{tab:multigrid}
+\noindent\textbf{Table \thetable.} Steady-state phase offset by pair category, mean $\pm$ s.d.\ across 8 grids.
+\begin{center}
 \begin{tabular}{lc}
 \toprule
 Pair category & Phase offset (ms) \\
@@ -366,16 +365,17 @@ Conflicting, different digit (inhibition-connected) & $12.97 \pm 0.18$ \\
 Non-conflicting, different digit (excitation-connected) & $13.00 \pm 0.12$ \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
 
-\begin{figure}[h]
-\centering
+
+\begin{center}
 \includegraphics[width=0.9\linewidth]{figures/spiking_real_sudoku_sweetspot_raster.png}
-\caption{Spike raster, one representative grid, sorted by digit. Top: full 3000\,ms window;
+\end{center}
+\refstepcounter{figure}\label{fig:raster}
+\noindent\textbf{Figure \thefigure.} Spike raster, one representative grid, sorted by digit. Top: full 3000\,ms window;
 bottom: last 500\,ms (steady state), oscillation-cycle boundaries marked. Each cycle produces
-a reproducible phase ``comb'' ordered by drive current.}
-\label{fig:raster}
-\end{figure}
+a reproducible phase ``comb'' ordered by drive current.
+
 
 Because a legal grid never puts the same digit on two conflicting cells, the numbers above
 conflate the current-driven separation between different digits with any additional,
@@ -431,10 +431,9 @@ the identical initial guess) through the same pipeline. Table~\ref{tab:emergent}
 coincidence-matrix quality and completion accuracy across 11 clue fractions ($M=200$, $n=25$
 trials/point).
 
-\begin{table}[h]
-\centering
-\caption{Emergent coincidence matrix quality and downstream completion accuracy.}
-\label{tab:emergent}
+\refstepcounter{table}\label{tab:emergent}
+\noindent\textbf{Table \thetable.} Emergent coincidence matrix quality and downstream completion accuracy.
+\begin{center}
 \begin{tabular}{lccccc}
 \toprule
 Clue fraction & $\hat C$ acc.\ & sens.\ & spec.\ & initial guess & dynamics pipeline \\
@@ -447,7 +446,8 @@ Clue fraction & $\hat C$ acc.\ & sens.\ & spec.\ & initial guess & dynamics pipe
 0.50 & 0.999 & 1.000 & 0.999 & 99.7\% & 100.0\% \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
+
 
 Specificity (correctly excluding truly-different-digit pairs) stays high throughout
 ($\geq0.79$); sensitivity (correctly finding truly-same-digit pairs) is the binding
@@ -455,14 +455,14 @@ constraint at low clue fractions, rising from $0.26$ to $1.0$ as clue fraction i
 (Figure~\ref{fig:emergent}). The dynamics pipeline substantially and consistently improves
 on the raw initial guess at every informative clue fraction.
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=0.95\linewidth]{figures/spiking_emergent_coincidence_full.png}
-\caption{Left: completion accuracy vs.\ clue fraction, initial guess vs.\ dynamics-derived
+\end{center}
+\refstepcounter{figure}\label{fig:emergent}
+\noindent\textbf{Figure \thefigure.} Left: completion accuracy vs.\ clue fraction, initial guess vs.\ dynamics-derived
 coincidence matrix vs.\ hard-coded conflict mask (25 trials/point, $\pm1$ s.e.). Right:
-quality of the emergent coincidence matrix vs.\ ground truth.}
-\label{fig:emergent}
-\end{figure}
+quality of the emergent coincidence matrix vs.\ ground truth.
+
 
 To test whether the dynamics pipeline matches or exceeds the hard-coded rule, we ran a
 second, statistically powered comparison in which all three methods were evaluated on
@@ -475,11 +475,10 @@ implementations of the same symbolic constraint -- a boolean mask and a coupled-
 synchrony pattern -- are behaviorally interchangeable once embedded in the same associative
 pipeline.
 
-\begin{table}[h]
-\centering
-\caption{Paired comparison, dynamics pipeline vs.\ hard-coded conflict mask, identical trials
-($n=20$/point). No comparison reaches significance.}
-\label{tab:wilcoxon}
+\refstepcounter{table}\label{tab:wilcoxon}
+\noindent\textbf{Table \thetable.} Paired comparison, dynamics pipeline vs.\ hard-coded conflict mask, identical trials
+($n=20$/point). No comparison reaches significance.
+\begin{center}
 \begin{tabular}{lccccccc}
 \toprule
 Clue fraction & 0.15 & 0.19 & 0.21 & 0.25 & 0.27 & 0.30 & 0.35 \\
@@ -488,7 +487,8 @@ Mean diff.\ (dyn.\ $-$ rule) & $+0.012$ & $-0.048$ & $-0.036$ & $-0.043$ & $+0.0
 Wilcoxon $p$ & 0.23 & 0.55 & 0.89 & 0.33 & 0.48 & 0.87 & 0.29 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
+
 
 We note, without over-interpreting a null result, that the same paired data show the
 dynamics pipeline's improvement over the raw initial guess is concentrated in a minority of
@@ -518,14 +518,14 @@ baseline it is compared against ($51.9\%$): the mechanism does not merely tolera
 noise gracefully, it remains a net improvement over the associative engram's own single-shot
 guess even when its input is substantially corrupted.
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=0.75\linewidth]{figures/spiking_drive_noise_clean.png}
-\caption{Unknown-cell accuracy vs.\ Gaussian drive-current noise (clue fraction $0.30$),
+\end{center}
+\refstepcounter{figure}\label{fig:drive-noise}
+\noindent\textbf{Figure \thefigure.} Unknown-cell accuracy vs.\ Gaussian drive-current noise (clue fraction $0.30$),
 compared against the noise-free symbolic-guess baseline. Degradation is smooth, and the
-dynamics pipeline stays above baseline throughout the tested range.}
-\label{fig:drive-noise}
-\end{figure}
+dynamics pipeline stays above baseline throughout the tested range.
+
 
 \subsection{Why low clue fractions are hard: signal quality, not signal quantity}
 
@@ -571,14 +571,14 @@ exactly as for a partial-grid cue; the cleaned engram is projected back through 
 reconstruct the image. Figure~\ref{fig:best-examples} shows representative cases where this
 cleanup step turns a badly corrupted initial reconstruction into an exact one.
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=0.85\linewidth]{figures/heteroassoc_vectorhash_best_examples.png}
-\caption{Representative cleanup examples (one dataset per row-group): noisy input, image
+\end{center}
+\refstepcounter{figure}\label{fig:best-examples}
+\noindent\textbf{Figure \thefigure.} Representative cleanup examples (one dataset per row-group): noisy input, image
 reconstructed from the engram \emph{before} cleanup, image reconstructed \emph{after} the
-Sudoku-attractor pass, and the true original. All cases shown are exact grid recoveries.}
-\label{fig:best-examples}
-\end{figure}
+Sudoku-attractor pass, and the true original. All cases shown are exact grid recoveries.
+
 
 \subsection{Generalization across datasets}
 
@@ -590,11 +590,10 @@ replicates across all three; CIFAR-100 declines somewhat earlier, consistent wit
 carrying less redundant, more textured content that a fixed-density sparse code compresses less
 cleanly.
 
-\begin{table}[h]
-\centering
-\caption{Exact grid recovery vs.\ image noise, three datasets ($M{=}200$, $n{=}200$/point,
-Wilson 95\% CI).}
-\label{tab:hetero-datasets}
+\refstepcounter{table}\label{tab:hetero-datasets}
+\noindent\textbf{Table \thetable.} Exact grid recovery vs.\ image noise, three datasets ($M{=}200$, $n{=}200$/point,
+Wilson 95\% CI).
+\begin{center}
 \begin{tabular}{lccc}
 \toprule
 $\sigma$ & MNIST & Fashion-MNIST & CIFAR-100 (gray) \\
@@ -606,7 +605,8 @@ $\sigma$ & MNIST & Fashion-MNIST & CIFAR-100 (gray) \\
 1.00 & 4.0\% [2.0,7.7] & 5.0\% [2.7,9.0] & 3.5\% [1.7,7.0] \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
+
 
 \subsection{A trivial baseline this architecture does not yet beat}
 \label{sec:knn-baseline}
@@ -657,15 +657,15 @@ $\min(M,H)$, and doubling $H$ from $1000$ to $2000$ (density held fixed) measura
 one -- exact recovery at $M{=}2000$, $\sigma{=}0.1$ rises from $80\%$ ($H{=}1000$) to $90\%$
 ($H{=}2000$) -- with zero effect on the image-side ceiling, exactly as the algebra predicts.
 
-\begin{figure}[h]
-\centering
+\begin{center}
 \includegraphics[width=\linewidth]{figures/heteroassoc_final_consolidation.png}
-\caption{Top-left: our pipeline vs.\ the nearest-neighbor baseline (paired). Top-right: the
+\end{center}
+\refstepcounter{figure}\label{fig:capacity-consolidation}
+\noindent\textbf{Figure \thefigure.} Top-left: our pipeline vs.\ the nearest-neighbor baseline (paired). Top-right: the
 $M{=}500$ cliff under the default ridge. Bottom-left: image Gram-matrix condition number vs.\
 $M$ (log scale), crossing the ridge value exactly where the cliff appears. Bottom-right: ridge
-sensitivity at $M{=}500$, showing the fix.}
-\label{fig:capacity-consolidation}
-\end{figure}
+sensitivity at $M{=}500$, showing the fix.
+
 
 \subsection{Comparison to classical Hopfield networks}
 \label{sec:hop}
@@ -695,12 +695,11 @@ fast under even modest noise that $5\%$ bit-flip recall falls from $100\%$ ($M{=
 $25\%$ ($M{=}150$) to $0\%$ ($M{=}200$) -- tracing out, in noise tolerance rather than raw
 capacity, a Hopfield-style cliff of its own.
 
-\begin{table}[h]
-\centering
-\caption{Exact recovery vs.\ $M$ on identical MNIST images (moderate matched-severity noise:
+\refstepcounter{table}\label{tab:hopfield}
+\noindent\textbf{Table \thetable.} Exact recovery vs.\ $M$ on identical MNIST images (moderate matched-severity noise:
 $5\%$ bit-flip for the three Hopfield variants, $\sigma{=}0.5$ Gaussian pixel noise for ours;
-not the same units, see Section~\ref{sec:hop}).}
-\label{tab:hopfield}
+not the same units, see Section~\ref{sec:hop}).
+\begin{center}
 \begin{tabular}{lccccc}
 \toprule
 $M$ & Classical & Covariance & Pseudo-inverse & Our network \\
@@ -711,16 +710,17 @@ $M$ & Classical & Covariance & Pseudo-inverse & Our network \\
 800 & 0\%   & 0\% & 0\%   & 10.0\% \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
 
-\begin{figure}[h]
-\centering
+
+\begin{center}
 \includegraphics[width=\linewidth]{figures/hopfield_vs_our_network_comparison.png}
-\caption{Left: exact recovery vs.\ $M$, all four methods, fixed moderate noise. Right: exact
+\end{center}
+\refstepcounter{figure}\label{fig:hopfield}
+\noindent\textbf{Figure \thefigure.} Left: exact recovery vs.\ $M$, all four methods, fixed moderate noise. Right: exact
 recovery vs.\ noise at fixed $M{=}50$ (chosen below every method's zero-noise collapse point),
-two separate noise axes since the corruption models differ.}
-\label{fig:hopfield}
-\end{figure}
+two separate noise axes since the corruption models differ.
+
 
 Our network is the only one of the four that never reaches zero in the tested range, holding
 $10$--$27\%$ recovery out to $M{=}800$ -- an order of magnitude past where the rule it shares

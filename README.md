@@ -210,6 +210,10 @@ python3 hopfield_vs_our_network_comparison.py    # Table 8, Figure 10: the four-
                                                   #   (classical/covariance/pseudo-inverse
                                                   #   Hopfield vs. our network) on identical
                                                   #   MNIST images
+python3 hopfield_pinv_basin_shrinkage.py         # supplementary: pseudo-inverse Hopfield's
+                                                  #   basin-of-attraction shrinkage under a
+                                                  #   fixed 5% bit-flip at M=100/150/200
+                                                  #   (100%/25%/0% exact, Section 4.5 text)
 ```
 Runtime: most of these build an M-item store from scratch per configuration and are a few
 seconds to low minutes each; `heteroassoc_final_consolidation.py` and
