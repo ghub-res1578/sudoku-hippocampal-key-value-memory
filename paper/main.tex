@@ -29,8 +29,11 @@ coincidence matrix through a fixed random sparse matrix and taking the top-$K$ a
 An attention-based key-value readout retrieves stored digit values with no observed capacity
 ceiling up to $M=2000$ stored items and tolerance to $30\%$ query corruption, in sharp
 contrast to a ridge-regression readout, which collapses to chance performance at $M{\sim}H$
-even without any query noise. Partial-grid cues drive an iterative attractor that recovers
-missing digits with graceful, clue-count-dependent accuracy. We then ask whether the
+even without any query noise. Retrieval degrades gracefully, not catastrophically, under
+heavier query corruption too: accuracy holds to $35\%$ of engram bits flipped and then
+declines over a narrow window whose rescue by conflict-mask cleanup peaks sharply at $42\%$
+noise. Partial-grid cues drive an iterative attractor that recovers missing digits with
+graceful, clue-count-dependent accuracy. We then ask whether the
 symbolic legality check that this architecture relies on for error correction --
 Sudoku's row/column/box constraint -- can instead emerge from neural dynamics rather than
 being hard-coded. We build a leaky-integrate-and-fire spiking network whose only structural
@@ -45,7 +48,11 @@ through the \emph{same} associative engram pipeline used for storage yields comp
 accuracy that is statistically indistinguishable (Wilcoxon signed-rank, $p>0.05$ at every
 tested clue fraction, paired $n=20$) from the original hard-coded conflict mask, while
 substantially exceeding the accuracy of the raw single-shot associative guess it starts
-from. We also characterize a reproducible power-law crossover in attractor relaxation time
+from. This dynamical mechanism is itself robust to noise: corrupting known cells' drive
+currents with Gaussian jitter degrades completion accuracy smoothly, remaining above the
+noise-free associative baseline even at current noise more than twice the spacing between
+adjacent digit levels. We also characterize a reproducible power-law crossover in attractor
+relaxation time
 near the completion threshold, and report -- rather than paper over -- that its exponent is
 not universal across stored-set sizes, tempering any claim to a shared critical-phenomena
 universality class. All code, data, and reproduction instructions accompany this paper.
@@ -167,7 +174,7 @@ noise level, as a percentage of engram bits flipped, before top-1 accuracy falls
 
 \begin{table}[h]
 \centering
-\caption{Collapse-noise threshold, essentially flat across three orders of magnitude of $M$
+\caption{Collapse-noise threshold, essentially flat across a 200-fold range of $M$
 and across $K,\rho$, except at very small $K$.}
 \label{tab:collapse}
 \begin{tabular}{lccccc}
@@ -179,7 +186,7 @@ Collapse threshold & 45\% & 45\% & 40\% & 25\% & 40--45\% \\
 \end{tabular}
 \end{table}
 
-Robustness is essentially independent of $M$ up to four orders of magnitude, and independent
+Robustness is essentially independent of $M$ over a 200-fold range, and independent
 of connection density over $\rho\in[0.002,1.0]$; the sole exception is engram sparsity itself
 -- $K=10$ is markedly less robust (25\% vs.\ 40--45\%) than any $K\geq 50$ tested, consistent
 with too few active units per engram leaving little redundancy to survive bit flips.
@@ -479,13 +486,15 @@ into a formally significant paired test at $n=20$.
 \subsection{Graceful degradation under drive-current noise}
 \label{sec:drive-noise}
 
-Sections~\ref{sec:graceful-noise} and \ref{sec:emergent} both test robustness to
-\emph{missing} information (query bit-flips; unknown cells). We separately tested robustness
-to \emph{corrupted} information specific to the spiking mechanism: rather than any cell being
-entirely unknown, every known cell's drive current itself was perturbed with Gaussian jitter
-before driving the network (clue fraction fixed at $0.30$; unknown cells still use the
-associative engram's own guess, unperturbed; $n=20$ trials/point, paired across noise
-levels). Figure~\ref{fig:drive-noise} shows the result: accuracy declines smoothly as
+Two different kinds of robustness have been tested so far: corruption of the abstract
+engram vector itself (Section~\ref{sec:graceful-noise}, random bit-flips) and missing
+per-cell information (Section~\ref{sec:emergent}, unknown cells driven by the associative
+engram's own guess). Here we test a third, specific to the spiking mechanism: corruption of
+the physical drive current itself. Rather than any cell being entirely unknown, every
+\emph{known} cell's drive current was perturbed with Gaussian jitter before driving the
+network (clue fraction fixed at $0.30$; unknown cells still use the associative engram's own
+guess, unperturbed; $n=20$ trials/point, paired across noise levels). Figure~\ref{fig:drive-noise}
+shows the result: accuracy declines smoothly as
 current noise grows from $0$ to over twice the spacing between adjacent digit levels, with no
 sign of a cliff. Notably, even at the highest tested noise ($\sigma$ equal to $2.2\times$ the
 inter-digit spacing -- comparable to smearing a query halfway to its neighboring digit level
@@ -522,7 +531,7 @@ points at specificity (not raw signal strength) as the lever for improving this 
 \section{Discussion}
 
 Three results compose into a single picture. The combinatorial engram code is robust across
-four orders of magnitude of storage load and independent of connection density
+a 200-fold range of storage load and independent of connection density
 (Table~\ref{tab:collapse}); the attention-based key-value readout built on top of it shows no
 observed capacity ceiling where a regression-based readout collapses catastrophically
 (Table~\ref{tab:readout}); and the symbolic legality constraint this architecture relies on
@@ -532,6 +541,19 @@ dynamics, statistically matching -- not exceeding -- the hard-coded rule
 more interesting finding: it demonstrates that a biologically-plausible, locally-wired
 dynamical mechanism can substitute for a piece of hard-coded logic without loss, which is a
 different and, we think, more useful claim than a performance improvement would have been.
+
+A theme recurs across every result in this paper: failure, when it happens, is graceful
+rather than catastrophic. The combinatorial code and its attention readout hold up to
+$30$--$35\%$ query corruption before collapsing over a narrow window rather than failing
+sharply (Section~\ref{sec:graceful-noise}); partial-grid completion degrades smoothly with
+clue count instead of failing at a hard threshold (Table~\ref{tab:completion}); and the
+spiking mechanism tolerates substantial drive-current noise, remaining a net improvement over
+the symbolic guess even when corrupted well past the spacing between adjacent digit levels
+(Section~\ref{sec:drive-noise}). Where a cleanup pass exists, its benefit is not uniform but
+concentrates specifically in the transition region -- the conflict-mask cleanup's rescue
+effect on query noise peaks sharply at $42\%$ (Figure~\ref{fig:feedback-noise}, right) --
+exactly where ambiguity is highest and correction is most needed, and negligible everywhere
+else, either because the query was already easy or already unrecoverable.
 
 We invoke the statistical mechanics of constraint satisfaction and random $k$-SAT
 \cite{mezard2002,mezard2009} as motivating context for why constraint density and dynamics
