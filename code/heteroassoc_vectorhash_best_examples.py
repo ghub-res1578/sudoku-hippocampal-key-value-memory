@@ -26,7 +26,7 @@ from heteroassoc_vectorhash_generalized import (
 M = 200
 CANDIDATE_SIGMAS = [0.3, 0.4, 0.5]
 N_TRIALS_PER_SIGMA = 30
-N_EXAMPLES_PER_DATASET = 3
+N_EXAMPLES_PER_DATASET = 1
 DATASETS = [
     ('mnist', 28, 'MNIST'),
     ('fashion_mnist', 28, 'Fashion-MNIST'),
@@ -123,7 +123,7 @@ def main():
     fig.suptitle('Largest rescue examples: attractor cleanup turns a poor initial\n'
                   'reconstruction into a correct one (all cases shown are exact grid recoveries)',
                   fontsize=12)
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.savefig('heteroassoc_vectorhash_best_examples.png', dpi=150)
     print('\nSaved heteroassoc_vectorhash_best_examples.png')
 
