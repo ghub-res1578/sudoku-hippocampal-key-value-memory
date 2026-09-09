@@ -921,6 +921,46 @@ consumed directly by our network and bipolarized (thresholded at $0.5$) for the 
 Hopfield variants, at $n{=}200$/point with Wilson 95\% CIs; an earlier bit-flip-vs-Gaussian
 mismatched version is reported separately in the text as a mechanism illustration only.
 
+\section*{Appendix: $M$, $K$, $H$ by Figure}
+\label{sec:appendix-mkh}
+
+$H$ (hippocampal/engram dimension) and $K$ (active units per engram) are $1000$ and $150$
+throughout this paper unless noted otherwise -- never tuned per figure. $M$ (number of
+stored items) is the one parameter that varies, either held fixed or swept as the figure's
+own $x$-axis. Table~\ref{tab:appendix-mkh} gives the exact values for every figure, read
+directly from each figure's generating script rather than reconstructed from memory.
+
+\refstepcounter{table}\label{tab:appendix-mkh}
+\noindent\textbf{Table \thetable.} $M$, $K$, $H$ for every figure in this paper.
+\begin{center}
+\begin{tabular}{clccc}
+\toprule
+Fig. & Generating script & $M$ & $K$ & $H$ \\
+\midrule
+1 & \texttt{capacity\_regression\_vs\_attention.py} & $10$--$2000$ (swept, $x$-axis) & 150 & 1000 \\
+2 & \texttt{hippocampus\_feedback\_noise\_zoomed.py} & 200 & 150 & 1000 \\
+3 & \texttt{sudoku\_partial\_grid\_completion.py} & 2000 & 150 & 1000 \\
+4 & \texttt{critical\_slowing\_down\_clean\_plot.py} & 500 & 400 & 1000 \\
+5 & \texttt{spiking\_real\_sudoku\_sweetspot.py} & -- & -- & -- \\
+6 & \texttt{spiking\_emergent\_coincidence.py} & 200 & 150 & 1000 \\
+7 & \texttt{spiking\_drive\_noise\_robustness.py} & 200 & 150 & 1000 \\
+8 & \texttt{heteroassoc\_vectorhash\_best\_examples.py} & 200 & 150 & 1000 \\
+9 & \texttt{heteroassoc\_final\_consolidation.py} & see note & 150 & 1000 \\
+10 & \texttt{hopfield\_matched\_noise\_rigorous.py} & see note & 150 & 1000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Figure~5 is a single-grid spiking simulation ($N{=}81$ cells) with no engram storage or
+retrieval involved, so $M$/$K$/$H$ do not apply. Figure~4 uses $K{=}400$ -- the sharpest
+crossover found in an earlier $M$--$K$ grid search -- rather than the default $150$.
+Figures~9 and 10 each have panels at different $M$: Figure~9's top-left (pipeline vs.\
+nearest-neighbor) and top-right/bottom-left (capacity cliff and Gram-matrix conditioning)
+panels use $M{=}200$ and $M{\in}\{200,300,400,500,650,800\}$ respectively, and its
+bottom-right (ridge sensitivity) panel fixes $M{=}500$; Figure~10's left panel ($M$-sweep)
+uses $M{\in}\{100,200,400,800\}$ at fixed $\sigma{=}0.3$, and its right panel (noise-sweep)
+fixes $M{=}50$.
+
 \section*{Code and Data Availability}
 All simulation code, raw data (CSV), and figure-generation scripts are available at
 \url{https://\allowbreak github.com/\allowbreak ghub-\allowbreak res1578/\allowbreak sudoku-\allowbreak hippocampal-\allowbreak key-\allowbreak value-\allowbreak memory}, including a
