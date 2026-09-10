@@ -72,11 +72,15 @@ A second design -- mapping many exemplars to a single shared per-class target vi
 regression -- was originally excluded here as "generalizes poorly, a cliff-like collapse
 under noise," based on `heteroassoc_W_IH_overlap_vs_noise.py`. That claim has since been
 corrected (`heteroassoc_W_IH_ridge_corrected.py`, `paper/main.tex` Section 4.1): the cited
-test used the same too-small default ridge diagnosed and fixed in Section 4.4, and with
+test used the same too-small default ridge diagnosed and fixed in Section 4.5, and with
 *only* that value corrected (nothing else changed), the identical setup degrades gracefully
 instead of cliffing (overlap $0.846\to0.725$ between $\sigma=0$ and $\sigma=0.10$, vs. the
-originally-reported $0.835\to0.330$) and supports genuine 9-way classification (86% at zero
-noise). It is still not used for the main image-to-Sudoku-grid pipeline, but for a real,
+originally-reported $0.835\to0.330$) and supports genuine 9-way classification (78.8% at zero
+noise, exhaustive over all 900 held-out test images; an earlier 100-trial sample overestimated
+this at 86%). Section 4.2 examines this classifier's confusion structure and seed robustness
+in detail, including a comparison against standard $k$-NN and logistic-regression baselines'
+confusion matrices on the identical split. It is still not used for the main
+image-to-Sudoku-grid pipeline, but for a real,
 structural reason rather than the originally-claimed one: a shared target can only support
 as many distinguishable outputs as there are distinct targets, while recovering a *specific*
 one of $M$ stored images needs $M$ mutually distinguishable targets -- exactly what
@@ -237,7 +241,7 @@ python3 spiking_low_clue_diagnostic_fixedweight.py
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
 
-### Section 4 -- Cross-modal heteroassociation (Tables 7-10, Figs. 10-12)
+### Section 4 -- Cross-modal heteroassociation (Tables 7-12, Figs. 10-14; Table 14/Fig. 15 in the Appendix)
 
 Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
 `tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
@@ -249,17 +253,32 @@ python3 heteroassoc_vectorhash_pipeline.py       # the core M=200 MNIST pipeline
                                                   #   iterate_sudoku_attractor, etc.)
 python3 heteroassoc_vectorhash_best_examples.py  # Figure 10: largest-rescue-gap examples,
                                                   #   3 datasets
-python3 heteroassoc_vectorhash_generalized.py    # Table 7 precursor: dataset/M generalization
-python3 heteroassoc_final_consolidation.py       # Table 7 (rigorous, N=200/point, Wilson CI) +
-                                                  #   Section 4.3's k-NN baseline/McNemar test +
-                                                  #   Section 4.4's capacity/conditioning/ridge
-                                                  #   diagnostics -- Figure 11
-python3 heteroassoc_knn_vs_M.py                  # Table 8: does the k-NN gap close as M grows?
+python3 heteroassoc_W_IH_ridge_corrected.py      # Section 4.1/4.2's single-W_IH, 9-class
+                                                  #   digit classifier (ridge=1.0); prints the
+                                                  #   78.8%-at-zero-noise headline number
+python3 heteroassoc_digit_classifier_seed_sweep.py       # Table 7, Figure 11: accuracy and
+                                                  #   attractor-class concentration across 6
+                                                  #   independent (W_SH, class-target) draws
+python3 heteroassoc_digit_classifier_vs_baseline_confusion.py  # Table 8, Figure 12: k-NN
+                                                  #   (k=5) and logistic-regression baselines
+                                                  #   on the identical split, and the
+                                                  #   off-diagonal error-pattern correlation
+                                                  #   test (r=0.71/0.68 vs. ours, 0.55 between
+                                                  #   the two baselines)
+python3 heteroassoc_digit_classifier_best_worst.py       # Appendix Figure 15: one best and
+                                                  #   one worst held-out classification per
+                                                  #   digit class, zero noise
+python3 heteroassoc_vectorhash_generalized.py    # Table 9 precursor: dataset/M generalization
+python3 heteroassoc_final_consolidation.py       # Table 9 (rigorous, N=200/point, Wilson CI) +
+                                                  #   Section 4.4's k-NN baseline/McNemar test +
+                                                  #   Section 4.5's capacity/conditioning/ridge
+                                                  #   diagnostics -- Figure 13
+python3 heteroassoc_knn_vs_M.py                  # Table 10: does the k-NN gap close as M grows?
                                                   #   (no -- it widens from +3.5pp at M=200 to
                                                   #   +96.0pp at M=2000), paired McNemar per M
 python3 heteroassoc_ridge_scaling_with_M.py      # does a single ridge value keep working as M
                                                   #   grows? (M up to 2000)
-python3 heteroassoc_ridge_scaling_extended.py    # Table 9: extends the above to M=2500-4000 --
+python3 heteroassoc_ridge_scaling_extended.py    # Table 11: extends the above to M=2500-4000 --
                                                   #   lambda~10 stays near-optimal throughout,
                                                   #   does not need to keep growing
 python3 heteroassoc_H_K_sweep.py                 # does bigger H or K help noise robustness?
@@ -274,10 +293,10 @@ python3 hopfield_vs_our_network_comparison.py    # original bit-flip-vs-Gaussian
                                                   #   the matched-noise version below, but still
                                                   #   the source of the M=100/150/200 pseudo-
                                                   #   inverse basin-shrinkage illustration in the
-                                                  #   Section 4.5 text
+                                                  #   Section 4.6 text
 python3 hopfield_pinv_basin_shrinkage.py         # standalone reproduction of that same
                                                   #   illustration (100%/25%/0% exact)
-python3 hopfield_matched_noise_rigorous.py       # Table 10, Figure 12: the headline four-way
+python3 hopfield_matched_noise_rigorous.py       # Table 12, Figure 14: the headline four-way
                                                   #   comparison, redone with N=200/point, Wilson
                                                   #   CIs, and a SINGLE shared noise model (every
                                                   #   method sees the same Gaussian-corrupted
@@ -289,7 +308,10 @@ Runtime: most of these build an M-item store from scratch per configuration and 
 seconds to low minutes each; `heteroassoc_final_consolidation.py`, `heteroassoc_knn_vs_M.py`,
 and `hopfield_matched_noise_rigorous.py` sweep several $M$/noise values at $N{=}200$/point and
 take several minutes; `heteroassoc_ridge_scaling_extended.py` builds stores up to $M{=}4000$
-and can take 10+ minutes.
+and can take 10+ minutes. `heteroassoc_digit_classifier_seed_sweep.py` retrains the classifier
+from scratch across 6 seeds (a couple of minutes); `heteroassoc_digit_classifier_vs_baseline_confusion.py`
+additionally requires `scikit-learn` (for the $k$-NN and logistic-regression baselines) and is
+a few minutes, mostly spent fitting logistic regression on $4500\times784$ raw pixels.
 
 ## Core modules
 

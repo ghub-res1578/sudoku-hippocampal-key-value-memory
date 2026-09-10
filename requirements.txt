@@ -4,3 +4,4 @@ scipy
 matplotlib
 brian2
 tensorflow
+scikit-learn

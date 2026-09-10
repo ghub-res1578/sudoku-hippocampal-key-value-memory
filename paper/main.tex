@@ -696,9 +696,12 @@ under noise ($0.835\to0.330$ between $\sigma=0$ and $\sigma=0.10$); that test us
 too-small default ridge diagnosed and corrected in Section~\ref{sec:capacity-hetero}, and we
 have since verified, changing only the ridge value and nothing else, that it does not actually
 cliff: properly regularized, the identical setup degrades gracefully ($0.846\to0.725$ over the
-same step) and supports genuine, if coarse, classification ($86\%$ accuracy decoding which of
-$9$ pooled classes a held-out image belongs to, at zero noise, declining gracefully with
-noise). We correct the earlier claim rather than let a regularization artifact stand as
+same step) and supports genuine, if coarse, classification ($78.8\%$ accuracy, exhaustive over
+all $900$ held-out test images, decoding which of $9$ pooled classes a held-out image belongs
+to at zero noise, declining gracefully with noise; an earlier $100$-trial sample overestimated
+this at $86\%$). Section~\ref{sec:digit-classifier-confusion} examines this classifier's error
+structure and its robustness to the random seed in detail. We correct the earlier claim rather
+than let a regularization artifact stand as
 evidence against shared targets in general. The real, structural reason one-memory-per-pair is
 required for \emph{this} task is different: a shared target supports at most as many
 distinguishable outputs as there are distinct targets (nine, in the corrected test above),
@@ -719,6 +722,89 @@ cleanup step turns a badly corrupted initial reconstruction into an exact one.
 reconstructed from the engram \emph{before} cleanup, image reconstructed \emph{after} the
 Sudoku-attractor pass, and the true original. All cases shown are exact grid recoveries.
 
+
+\subsection{Digit classification: confusion structure and seed robustness}
+\label{sec:digit-classifier-confusion}
+
+Repeating the full training-and-evaluation pipeline across $6$ independent random draws of the
+projection $W_{SH}$ and the $9$ Sudoku-engram class targets (Table~\ref{tab:seed-sweep}) shows
+the $78.8\%$ accuracy above is stable, not a lucky draw: $78.4$--$79.3\%$ across all six. Every
+draw's errors are disproportionately concentrated in one ``attractor'' predicted class
+($16$--$18\%$ of all errors in $5/6$ draws land on class $9$ alone; class $4$ in the sixth) --
+reproducible, but not attributable to the specific random engram assigned to that class, since
+that assignment is a different $1000$-bit pattern on every draw, yet the same class label keeps
+attracting excess error.
+
+\begin{center}
+\includegraphics[width=0.85\linewidth]{figures/heteroassoc_digit_classifier_seed_sweep.png}
+\end{center}
+\refstepcounter{figure}\label{fig:seed-sweep}
+\noindent\textbf{Figure \thefigure.} Row-normalized confusion matrices across $6$ independent
+seeds (different $W_{SH}$ and class-target draws each time); accuracy and the dominant
+attractor class are annotated per panel.
+
+\refstepcounter{table}\label{tab:seed-sweep}
+\noindent\textbf{Table \thetable.} Accuracy and attractor-class concentration across $6$
+independent seeds (exhaustive over $900$ held-out test images per seed).
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+Seed & Accuracy & Top attractor class & Top-2 share of all errors \\
+\midrule
+0 & 78.8\% & 9 & 32.5\% \\
+1 & 78.6\% & 9 & 31.6\% \\
+2 & 79.3\% & 9 & 35.5\% \\
+3 & 78.8\% & 9 & 34.0\% \\
+4 & 78.4\% & 9 & 32.5\% \\
+5 & 78.8\% & 4 & 35.6\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+This raises an obvious question, distinct from the nearest-neighbor \emph{capacity} comparison
+of Section~\ref{sec:knn-baseline}: is a single class absorbing $16$--$18\%$ of all errors
+evidence of a defect specific to this architecture, or an unremarkable feature of MNIST itself?
+We tested this by training two standard reference classifiers -- $k$-NN ($k{=}5$) and
+multinomial logistic regression, both on raw pixels -- on the identical
+$500$-train/$100$-test-per-class split, digits $1$--$9$ (exact construction in the Appendix).
+Both baselines show the same qualitative structure (Table~\ref{tab:baseline-confusion}):
+logistic regression's attractor is also class $9$, at almost the same share ($16.5\%$) as ours;
+$k$-NN's attractor (class $1$, $21.0\%$) is \emph{more} concentrated than ours. Correlating the
+full $9\times9$ off-diagonal error distribution between classifiers gives the sharpest test:
+ours correlates with $k$-NN at $r{=}0.71$ and with logistic regression at $r{=}0.68$ --
+\emph{higher} than $k$-NN and logistic regression correlate with each other ($r{=}0.55$). Our
+architecture's mistakes resemble a standard classifier's mistakes at least as much as two
+standard classifiers resemble each other: the attractor structure reflects genuine pixel-level
+ambiguity in this MNIST subset, not a defect particular to the pseudo-inverse/Sudoku-engram
+architecture.
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/heteroassoc_digit_classifier_vs_baseline_confusion.png}
+\end{center}
+\refstepcounter{figure}\label{fig:baseline-confusion}
+\noindent\textbf{Figure \thefigure.} Confusion matrices (row-normalized), identical
+$500$-train/$100$-test-per-class split: our architecture vs.\ $k$-NN ($k{=}5$) vs.\ multinomial
+logistic regression.
+
+\refstepcounter{table}\label{tab:baseline-confusion}
+\noindent\textbf{Table \thetable.} Accuracy, attractor concentration, and error-pattern
+correlation, ours vs.\ two standard baselines.
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+Classifier & Accuracy & Top attractor & Top-2 share & $r$ vs.\ ours \\
+\midrule
+Ours (single $W_{IH}$) & 78.8\% & class 9 (16.8\%) & 32.5\% & -- \\
+$k$-NN ($k{=}5$) & 91.0\% & class 1 (21.0\%) & 40.7\% & 0.71 \\
+Logistic regression & 87.9\% & class 9 (16.5\%) & 32.1\% & 0.68 \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent($k$-NN vs.\ logistic regression correlate at $r{=}0.55$ with each other -- lower than
+either correlates with ours.)
+
+Representative best- and worst-case classified digit images are given in the Appendix
+(Figure~\ref{fig:digit-best-worst}), alongside the exact train/test set construction.
 
 \subsection{Generalization across datasets}
 
@@ -1086,39 +1172,96 @@ directly from each figure's generating script rather than reconstructed from mem
 \refstepcounter{table}\label{tab:appendix-mkh}
 \noindent\textbf{Table \thetable.} $M$, $K$, $H$ for every figure in this paper.
 \begin{center}
+\footnotesize
 \begin{tabular}{clccc}
 \toprule
 Fig. & Generating script & $M$ & $K$ & $H$ \\
 \midrule
-1 & \texttt{hash\_similarity\_preservation.py} & 200 (30 targets sampled) & 150 & 1000 \\
-2 & \texttt{capacity\_regression\_vs\_attention.py} & $10$--$2000$ (swept, $x$-axis) & 150 & 1000 \\
-3 & \texttt{separation\_operator\_ablation.py} & 200 & 150 & 1000 \\
-4 & \texttt{hippocampus\_feedback\_noise\_zoomed.py} & 200 & 150 & 1000 \\
-5 & \texttt{sudoku\_partial\_grid\_completion.py} & 2000 & 150 & 1000 \\
-6 & \texttt{critical\_slowing\_down\_clean\_plot.py} & 500 & 400 & 1000 \\
-7 & \texttt{spiking\_real\_sudoku\_sweetspot.py} & -- & -- & -- \\
-8 & \texttt{spiking\_emergent\_coincidence.py} & 200 & 150 & 1000 \\
-9 & \texttt{spiking\_drive\_noise\_robustness.py} & 200 & 150 & 1000 \\
-10 & \texttt{heteroassoc\_vectorhash\_best\_examples.py} & 200 & 150 & 1000 \\
-11 & \texttt{heteroassoc\_final\_consolidation.py} & see note & 150 & 1000 \\
-12 & \texttt{hopfield\_matched\_noise\_rigorous.py} & see note & 150 & 1000 \\
+\ref{fig:hashing} & \texttt{hash\_similarity\_preservation.py} & 200 (30 targets sampled) & 150 & 1000 \\
+\ref{fig:capacity} & \texttt{capacity\_regression\_vs\_attention.py} & $10$--$2000$ (swept, $x$-axis) & 150 & 1000 \\
+\ref{fig:separation} & \texttt{separation\_operator\_ablation.py} & 200 & 150 & 1000 \\
+\ref{fig:feedback-noise} & \texttt{hippocampus\_feedback\_noise\_zoomed.py} & 200 & 150 & 1000 \\
+\ref{fig:completion} & \texttt{sudoku\_partial\_grid\_completion.py} & 2000 & 150 & 1000 \\
+\ref{fig:crossover} & \texttt{critical\_slowing\_down\_clean\_plot.py} & 500 & 400 & 1000 \\
+\ref{fig:raster} & \texttt{spiking\_real\_sudoku\_sweetspot.py} & -- & -- & -- \\
+\ref{fig:emergent} & \texttt{spiking\_emergent\_coincidence.py} & 200 & 150 & 1000 \\
+\ref{fig:drive-noise} & \texttt{spiking\_drive\_noise\_robustness.py} & 200 & 150 & 1000 \\
+\ref{fig:best-examples} & \texttt{heteroassoc\_vectorhash\_best\_examples.py} & 200 & 150 & 1000 \\
+\ref{fig:seed-sweep} & \texttt{heteroassoc\_digit\_classifier\_seed\_sweep.py} & see note & 150 & 1000 \\
+\ref{fig:baseline-confusion} & \texttt{heteroassoc\_digit\_classifier\_vs\_baseline\_confusion.py} & see note & 150 & 1000 \\
+\ref{fig:digit-best-worst} & \texttt{heteroassoc\_digit\_classifier\_best\_worst.py} & see note & 150 & 1000 \\
+\ref{fig:capacity-consolidation} & \texttt{heteroassoc\_final\_consolidation.py} & see note & 150 & 1000 \\
+\ref{fig:hopfield} & \texttt{hopfield\_matched\_noise\_rigorous.py} & see note & 150 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Figure~7 is a single-grid spiking simulation ($N{=}81$ cells) with no engram storage or
-retrieval involved, so $M$/$K$/$H$ do not apply. Figure~6 uses $K{=}400$ -- the sharpest
-crossover found in an earlier $M$--$K$ grid search -- rather than the default $150$. Figures~3
-and 4 both sweep query noise on paired corrupted queries, but differ in what is held fixed:
-Figure~4 fixes the separation operator to softmax and includes the conflict-mask cleanup pass;
-Figure~3 instead varies the separation operator itself, with cleanup excluded throughout, to
-isolate the operator's own behavior from the cleanup mechanism characterized in Figure~4.
-Figures~11 and 12 each have panels at different $M$: Figure~11's top-left (pipeline vs.\
-nearest-neighbor) and top-right/bottom-left (capacity cliff and Gram-matrix conditioning)
-panels use $M{=}200$ and $M{\in}\{200,300,400,500,650,800\}$ respectively, and its
-bottom-right (ridge sensitivity) panel fixes $M{=}500$; Figure~12's left panel ($M$-sweep)
-uses $M{\in}\{100,200,400,800\}$ at fixed $\sigma{=}0.3$, and its right panel (noise-sweep)
-fixes $M{=}50$.
+Figure~\ref{fig:raster} is a single-grid spiking simulation ($N{=}81$ cells) with no engram
+storage or retrieval involved, so $M$/$K$/$H$ do not apply. Figure~\ref{fig:crossover} uses
+$K{=}400$ -- the sharpest crossover found in an earlier $M$--$K$ grid search -- rather than the
+default $150$. Figures~\ref{fig:separation} and \ref{fig:feedback-noise} both sweep query noise
+on paired corrupted queries, but differ in what is held fixed: Figure~\ref{fig:feedback-noise}
+fixes the separation operator to softmax and includes the conflict-mask cleanup pass;
+Figure~\ref{fig:separation} instead varies the separation operator itself, with cleanup
+excluded throughout, to isolate the operator's own behavior from the cleanup mechanism
+characterized in Figure~\ref{fig:feedback-noise}. Figures~\ref{fig:seed-sweep},
+\ref{fig:baseline-confusion}, and \ref{fig:digit-best-worst} (the digit classifier's confusion
+structure, baseline comparison, and example classifications) do not store Sudoku grids in the
+usual sense: $M{=}9$ class-target engrams are trained against, each regressed from $500$
+training images/class (see the Appendix, ``Digit Classifier Train/Test Set and Example
+Classifications,'' for the exact split),
+drawn from an $M_{\mathrm{pool}}{=}200$-grid Sudoku pool that the $9$ targets are sampled from.
+Figures~\ref{fig:capacity-consolidation} and \ref{fig:hopfield} each have panels at different
+$M$: Figure~\ref{fig:capacity-consolidation}'s top-left (pipeline vs.\ nearest-neighbor) and
+top-right/bottom-left (capacity cliff and Gram-matrix conditioning) panels use $M{=}200$ and
+$M{\in}\{200,300,400,500,650,800\}$ respectively, and its bottom-right (ridge sensitivity)
+panel fixes $M{=}500$; Figure~\ref{fig:hopfield}'s left panel ($M$-sweep) uses
+$M{\in}\{100,200,400,800\}$ at fixed $\sigma{=}0.3$, and its right panel (noise-sweep) fixes
+$M{=}50$.
+
+\section*{Appendix: Digit Classifier Train/Test Set and Example Classifications}
+\label{sec:appendix-digit-classifier}
+
+The digit classifier of Sections~\ref{sec:hetero}--\ref{sec:digit-classifier-confusion} is
+trained and evaluated on MNIST digits $1$--$9$ (digit $0$ excluded, to match the nine Sudoku
+digit values used as class targets). Table~\ref{tab:appendix-digit-split} gives the exact
+split. Train and test images are disjoint subsets of Keras's standard MNIST train/test
+partitions respectively (\texttt{tensorflow.keras.datasets.mnist}), so no test image is seen
+during training; within each partition, the first $N$ images of each class are taken in
+dataset order (deterministic, not randomly sampled), via
+\texttt{np.flatnonzero(y==d)[:n]}.
+
+\refstepcounter{table}\label{tab:appendix-digit-split}
+\noindent\textbf{Table \thetable.} Train/test set construction for the digit classifier.
+\begin{center}
+\begin{tabular}{lc}
+\toprule
+Dataset & MNIST (Keras standard train/test partitions) \\
+Classes & 9 (digits $1$--$9$; digit $0$ excluded) \\
+Train images per class & 500 \\
+Test images per class & 100 \\
+Total train images & 4500 \\
+Total test images & 900 \\
+Image dimension & $28\times28=784$ (flattened, normalized to $[0,1]$) \\
+Train/test overlap & none (disjoint Keras partitions) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Figure~\ref{fig:digit-best-worst} shows, for every one of the $9$ classes, the held-out test
+image classified with the single highest margin (top-scoring class minus runner-up) among
+correct classifications (``best'') and the held-out test image classified with the highest
+margin among \emph{incorrect} classifications (``worst'': confidently wrong), at zero query
+noise. Digit $1$'s worst case is a genuine low-margin ambiguity ($0.41$, well below every other
+class's $\sim$0.7--0.8); every other class's worst case is a high-margin error, consistent with
+the attractor structure quantified in Section~\ref{sec:digit-classifier-confusion}.
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/heteroassoc_digit_classifier_best_worst.png}
+\end{center}
+\refstepcounter{figure}\label{fig:digit-best-worst}
+\noindent\textbf{Figure \thefigure.} One best and one worst held-out classification per digit
+class (zero noise, exhaustive over all $900$ test images).
 
 \section*{Code and Data Availability}
 All simulation code, raw data (CSV), and figure-generation scripts are available at
