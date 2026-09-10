@@ -66,14 +66,29 @@ succeeds where classical and even pseudo-inverse-trained Hopfield networks -- th
 the identical learning rule we do, and statistically tied with ours in noise tolerance at fixed
 storage size -- collapse to zero recovery an order of magnitude sooner in storage capacity,
 isolating the separate error-correcting attractor, not the learning rule, as the source of the
-graceful degradation. All code, data, and reproduction instructions accompany this paper.
+graceful degradation. A separation-operator ablation -- swapping the readout's softmax
+nonlinearity for five alternatives spanning the correlation-matrix-memory, sparse-distributed-memory,
+and dense-associative-memory literatures -- shows that noise robustness tracks whether an
+operator sharpens by an absolute similarity gap or a similarity ratio, not merely how
+aggressively it discriminates: ratio-based sharpening collapses at roughly half the noise level
+gap-based sharpening tolerates, given matched zero-noise selectivity. We also verify directly,
+rather than assume by analogy to sparse random-projection hashing circuits, that the encoder
+preserves relative similarity between inputs (Spearman $\rho=0.97$ between raw coincidence-matrix
+similarity and engram overlap across the full corruption range). All code, data, and
+reproduction instructions accompany this paper.
 \end{abstract}
 
 \section{Introduction}
 
 Biological memory systems, and the hippocampus in particular, are widely understood to store
 information as sparse, combinatorial codes and to retrieve it through content-addressable,
-key-value-like association rather than by address \cite{marr1971,rolls2013,hopfield1982}.
+key-value-like association rather than by address \cite{marr1971,rolls2013,hopfield1982}. This
+division of labor is formalized by the complementary learning systems framework, which casts
+the hippocampus and neocortex as a fast, sparse, pattern-separated store and a slow,
+overlapping, generalizing one, respectively \cite{mcclelland1995}, and has recently been
+argued to be the same key-value factorization -- discriminable keys, content-faithful values
+-- that underlies the success of attention-based machine-learning systems
+\cite{gershman2025}.
 A recurring computational question for such architectures is how they resolve
 \emph{ambiguity}: when a retrieval cue is noisy, partial, or internally inconsistent, some
 mechanism must clean it up before or during recall. In symbolic AI this cleanup is usually a
@@ -93,16 +108,29 @@ work to speak to:
   \item \textbf{Combinatorial coding.} Each stored grid's relational structure (which
   cell-pairs share a digit) is projected through a fixed random sparse matrix and sparsified
   to a $k$-winner-take-all binary engram -- a scheme in the spirit of Willshaw associative
-  memory \cite{willshaw1969} and sparse random-projection coding.
+  memory \cite{willshaw1969} and sparse random-projection coding, closely related to the
+  random-projection-plus-winner-take-all hashing circuit identified in the fly olfactory
+  system \cite{dasgupta2017}. We test directly, in Section~\ref{sec:hashing}, whether our
+  encoder shares that circuit's defining property: approximate preservation of relative
+  similarity between inputs.
   \item \textbf{Key-value memory.} Retrieval uses an attention-style readout -- softmax
   similarity between a query engram and all stored engrams, weighting the corresponding
   stored values -- rather than a single learned linear map, echoing the connection between
-  classical and modern dense associative memory and Transformer-style attention
-  \cite{krotov2016,ramsauer2020}.
+  classical correlation-matrix memory \cite{kohonen1972}, sparse distributed memory
+  \cite{kanerva1988}, classical and modern dense associative memory
+  \cite{krotov2016,ramsauer2020}, and Transformer-style self-attention
+  \cite{vaswani2017,schlag2021} -- four architectures recently unified as instances of the
+  same key-value memory differing only in the nonlinearity (``separation operator'') applied
+  to key-query similarity \cite{gershman2025}. Section~\ref{sec:separation} tests that
+  unification directly, swapping our readout's separation operator across all four families.
   \item \textbf{Constraint satisfaction as dynamics.} We ask whether Sudoku's legality
   constraint, which the architecture above uses explicitly as a hard-coded cleanup rule, can
   instead be realized as an emergent property of a spiking network's synchronization
-  dynamics -- a question in the spirit of the broader statistical mechanics of constraint
+  dynamics -- reading out relational structure from spike-timing coincidence in the spirit of
+  the classical correlation theory of binding-by-synchrony \cite{malsburg1981,singer1995}, and
+  using relaxation to a coupled-oscillator fixed point to enforce a combinatorial constraint in
+  the spirit of Hopfield and Tank's neural optimization networks \cite{hopfieldtank1985}. This
+  is also a question in the spirit of the broader statistical mechanics of constraint
   satisfaction and random $k$-SAT \cite{mezard2002,mezard2009}, which we invoke here as
   motivating context rather than as a universality result we claim to extend.
 \end{itemize}
@@ -177,7 +205,11 @@ relay (a fixed weight $w_{IE}$);
 non-conflicting pairs are coupled through direct weak excitatory synapses (weight $w_{EE}$).
 No synapse encodes which cells \emph{should} share a digit -- that information is never
 given structurally, only through the per-cell drive current, exactly mirroring the role of a
-query in the key-value architecture above.
+query in the key-value architecture above. Reading a relation (``these cells share a digit'')
+out of spike-timing coincidence rather than out of any single neuron's firing rate is a direct
+instance of the correlation theory of binding-by-synchrony
+\cite{malsburg1981,singer1995}: Sections~\ref{sec:sync}--\ref{sec:emergent} test whether that
+hypothesis, applied to this specific combinatorial relation, actually works.
 
 \section{Results}
 
@@ -206,6 +238,40 @@ Robustness is essentially independent of $M$ over a 200-fold range, and independ
 of connection density over $\rho\in[0.002,1.0]$; the sole exception is engram sparsity itself
 -- $K=10$ is markedly less robust (25\% vs.\ 40--45\%) than any $K\geq 50$ tested, consistent
 with too few active units per engram leaving little redundancy to survive bit flips.
+
+\subsection{The engram code as a similarity-preserving hash}
+\label{sec:hashing}
+
+Every noise-robustness result in this paper (Table~\ref{tab:collapse} above, and
+Sections~\ref{sec:graceful-noise}, \ref{sec:emergent}, \ref{sec:drive-noise} below) measures
+\emph{downstream decode accuracy} degrading gracefully as the query is corrupted. None of them
+directly tests the encoder's own geometry: whether $\mathrm{topK}(W_{SH}\,\mathrm{vec}(C))$
+approximately preserves relative similarity between inputs, the property that random
+projection followed by winner-take-all sparsification is known to provide in the fly olfactory
+mushroom body \cite{dasgupta2017}. We test this directly rather than assume it by analogy.
+
+For 30 randomly sampled stored grids, we corrupted each grid's true coincidence matrix
+$C_{\mathrm{true}}$ by flipping a controlled fraction of its (symmetric) same-digit entries,
+swept from $0\%$ to $100\%$, and measured two quantities on each corrupted instance: the
+\emph{input similarity} to the true grid (Jaccard overlap of the same-digit pair sets between
+$C_{\mathrm{noisy}}$ and $C_{\mathrm{true}}$) and the \emph{engram similarity} of the resulting
+codes ($|h_{\mathrm{noisy}}\cap h_{\mathrm{true}}|/K$). Across $390$ corrupted instances
+spanning the full corruption range, the two are strongly and monotonically related (Spearman
+$\rho=0.974$, $p<10^{-250}$; Figure~\ref{fig:hashing}) -- direct confirmation that the encoder
+behaves as a similarity-preserving hash rather than merely as a randomizing sparsifier. The
+floor this relationship approaches at full corruption ($0.149$ mean engram overlap at $0\%$
+input similarity) matches the chance overlap expected between two independent $K$-sparse codes
+in an $H$-dimensional space, $K/H=150/1000=0.15$, almost exactly -- confirming that residual
+overlap at maximal corruption reflects code geometry, not a leftover correlation the corruption
+procedure failed to remove.
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/hash_similarity_preservation.png}
+\end{center}
+\refstepcounter{figure}\label{fig:hashing}
+\noindent\textbf{Figure \thefigure.} Left: engram overlap vs.\ input (coincidence-matrix) similarity, pooled across
+all corruption levels and target grids ($n=390$). Right: mean engram overlap with the true
+target vs.\ percent corruption of the input coincidence matrix.
 
 \subsection{Key-value recall: attention vs.\ regression}
 \label{sec:attn-vs-reg}
@@ -243,6 +309,62 @@ curve.
 \noindent\textbf{Figure \thefigure.} Estimated capacity (largest $M$ retaining accuracy above a fixed threshold) vs.\
 query noise, regression vs.\ attention readout.
 
+
+\subsection{Separation operators: gap-based vs.\ ratio-based sharpening}
+\label{sec:separation}
+
+The attention readout above uses softmax as its separation operator. Gershman, Fiete \& Irie
+\cite{gershman2025} note that softmax, a hard top-$j$ threshold, and a rectified-power
+nonlinearity are, respectively, the separation operators of Transformer-style attention,
+sparse distributed memory \cite{kanerva1988}, and dense associative memory
+\cite{krotov2016,ramsauer2020} -- three architectures differing only in this one nonlinearity,
+alongside plain (identity) correlation-matrix memory \cite{kohonen1972}, which applies no
+separation at all. We test this unification directly: holding the encoder, the stored $M{=}200$
+engrams, and every corrupted query identical (a fully paired design), we swap only the
+separation operator and re-run the query-noise sweep of Section~\ref{sec:graceful-noise},
+without the conflict-mask cleanup pass, to isolate the operator's own behavior.
+
+\begin{center}
+\includegraphics[width=0.85\linewidth]{figures/separation_operator_ablation.png}
+\end{center}
+\refstepcounter{figure}\label{fig:separation}
+\noindent\textbf{Figure \thefigure.} Digit-cell retrieval accuracy vs.\ query noise for six separation operators,
+evaluated on identical corrupted queries at every noise level ($M{=}200$, $n{=}100$/point, no
+cleanup pass).
+
+Two findings depart from the intuition that a separation operator's robustness is set by how
+aggressively it discriminates (``sharp separation is powerful but fragile''
+\cite{gershman2025}). First, identity separation -- no nonlinearity at all -- performs at
+chance \emph{even with a perfectly clean query} ($11.4\%$ vs.\ $100\%$ for softmax at $0\%$
+noise): with $M{=}200$ competing memories, a linear reweighting cannot overcome the combined
+pull of the other $199$ stored values on the weighted average, so some separating nonlinearity
+is not merely a robustness refinement here but a strict requirement for retrieval to function
+at all. Second, and more surprisingly, sharper is not uniformly more fragile: a hard-threshold
+top-$5$ average (naively implementing sparse distributed memory's equal-weight readout) is
+\emph{also} near chance at every noise level, including zero, because averaging five
+equally-weighted stored values -- one correct, four spurious -- dilutes the correct digit
+rather than recovering it, unlike real sparse distributed memory's per-bit majority vote over
+redundant patterns. Meanwhile argmax (winner-take-all, the ``ideal noiseless'' operator
+\cite{gershman2025}) and a sharpened softmax ($\tau=0.5$) hold up \emph{at least as well as}
+the baseline softmax ($\tau=2.0$) right up to a shared collapse near $45$--$48\%$ noise --
+sharpness itself is not the fault line.
+
+The real fault line is gap-based vs.\ ratio-based sharpening. The rectified-polynomial
+operator (dense-associative-memory-style, exponent $n=8$) collapses far earlier, around
+$20$--$25\%$ noise, despite normalized zero-noise selectivity comparable to the other sharp
+operators. We traced this mechanistically: even at zero noise, the best-competing wrong memory
+among the $M{=}200$ stored grids already reaches, on average, similarity within a factor of
+$3.39$ of the true match's (an extreme-value effect of having $199$ competitors, well below the
+naive factor of $6.67$ predicted from the mean chance-overlap floor alone), and this ratio
+shrinks toward $1$ as noise grows ($1.92$ at $20\%$ noise, $1.45$ at $30\%$). A power of a
+ratio shrinking toward $1$ loses discriminative weight far faster than an exponential of the
+corresponding absolute gap does, for the same starting margin -- softmax's exponential-of-a-gap
+form is intrinsically more robust than a power-of-a-ratio form once a sizable number of
+competing memories guarantees a non-negligible interference floor. This is a refinement, not a
+contradiction, of the unification in \cite{gershman2025}: the four architectures are indeed the
+same computation with a different nonlinearity plugged in, but which nonlinearity is the right
+engineering choice depends on the similarity statistics of the memory system it operates over,
+not on sharpness alone.
 
 \subsection{Graceful degradation under query noise}
 \label{sec:graceful-noise}
@@ -309,7 +431,11 @@ ${\sim}0.15$, rises steeply through $0.20$--$0.40$, and saturates by $0.5$--$0.7
 
 The iteration count of the attractor loop, as a function of clue fraction, shows a
 reproducible dynamical signature reminiscent of relaxation-time crossovers studied in the
-statistical mechanics of random constraint satisfaction \cite{mezard2002}. For the sharpest
+statistical mechanics of random constraint satisfaction \cite{mezard2002}. This is the same
+basic move as Hopfield and Tank's classical use of attractor relaxation to solve constrained
+optimization problems \cite{hopfieldtank1985}, applied here to a combinatorial completion task
+with a well-defined difficulty axis (clue fraction) rather than a single fixed instance. For
+the sharpest
 transition we found ($M=500$, $K=400$), a sub-critical plateau ($92.6\pm7.1$ iterations,
 clue fraction $\leq 0.21$) decays as a power law,
 $\tau \sim (p_c - p)^{\nu}$, to a floor of exactly 2 iterations by clue fraction $0.53$.
@@ -548,8 +674,10 @@ points at specificity (not raw signal strength) as the lever for improving this 
 \label{sec:hetero}
 
 Everything above stores and retrieves a single content type (Sudoku grids). Vector-HaSH
-\cite{chandra2025} factors biological memory into two parts: a fixed, content-independent
-\emph{scaffold} (grid-cell/hippocampal recurrence) that provably generates exponentially many
+\cite{chandra2025}, and its non-spatial, modular-attractor sibling MESH \cite{sharma2022},
+factor biological memory into two parts: a fixed, content-independent
+\emph{scaffold} (grid-cell/hippocampal recurrence in Vector-HaSH, a modular fixed attractor
+network in MESH) that provably generates exponentially many
 attractors with equally large basins, and a separate, plastic \emph{heteroassociative} pathway
 linking arbitrary sensory input to that scaffold via ``a Hebb-like online implementation of the
 pseudoinverse rule.'' We test whether our architecture's engram layer can play the scaffold's
@@ -817,6 +945,20 @@ more interesting finding: it demonstrates that a biologically-plausible, locally
 dynamical mechanism can substitute for a piece of hard-coded logic without loss, which is a
 different and, we think, more useful claim than a performance improvement would have been.
 
+Two further results test claims we had, until this paper, only argued for by analogy rather
+than measured directly. First, the encoder itself behaves as a similarity-preserving hash, not
+merely a randomizing sparsifier: engram overlap tracks raw coincidence-matrix similarity almost
+monotonically (Spearman $\rho=0.974$, Section~\ref{sec:hashing}), the property the fly
+olfactory hashing circuit \cite{dasgupta2017} is known to provide and that every graceful-degradation
+curve in this paper implicitly assumes but does not itself demonstrate. Second, unifying
+correlation-matrix memory, sparse distributed memory, dense associative memory, and
+Transformer attention as one computation differing only in its separation operator
+\cite{gershman2025} is not just a re-description after the fact -- swapping that one
+nonlinearity in our own readout changes noise robustness by tens of percentage points
+(Section~\ref{sec:separation}), and the mechanism responsible (gap-based vs.\ ratio-based
+sharpening under a non-negligible interference floor) is a genuine refinement of, not merely a
+restatement of, that unification.
+
 A theme recurs across every result in this paper: failure, when it happens, is graceful
 rather than catastrophic. The combinatorial code and its attention readout hold up to
 $30$--$35\%$ query corruption before collapsing over a narrow window rather than failing
@@ -937,27 +1079,33 @@ directly from each figure's generating script rather than reconstructed from mem
 \toprule
 Fig. & Generating script & $M$ & $K$ & $H$ \\
 \midrule
-1 & \texttt{capacity\_regression\_vs\_attention.py} & $10$--$2000$ (swept, $x$-axis) & 150 & 1000 \\
-2 & \texttt{hippocampus\_feedback\_noise\_zoomed.py} & 200 & 150 & 1000 \\
-3 & \texttt{sudoku\_partial\_grid\_completion.py} & 2000 & 150 & 1000 \\
-4 & \texttt{critical\_slowing\_down\_clean\_plot.py} & 500 & 400 & 1000 \\
-5 & \texttt{spiking\_real\_sudoku\_sweetspot.py} & -- & -- & -- \\
-6 & \texttt{spiking\_emergent\_coincidence.py} & 200 & 150 & 1000 \\
-7 & \texttt{spiking\_drive\_noise\_robustness.py} & 200 & 150 & 1000 \\
-8 & \texttt{heteroassoc\_vectorhash\_best\_examples.py} & 200 & 150 & 1000 \\
-9 & \texttt{heteroassoc\_final\_consolidation.py} & see note & 150 & 1000 \\
-10 & \texttt{hopfield\_matched\_noise\_rigorous.py} & see note & 150 & 1000 \\
+1 & \texttt{hash\_similarity\_preservation.py} & 200 (30 targets sampled) & 150 & 1000 \\
+2 & \texttt{capacity\_regression\_vs\_attention.py} & $10$--$2000$ (swept, $x$-axis) & 150 & 1000 \\
+3 & \texttt{separation\_operator\_ablation.py} & 200 & 150 & 1000 \\
+4 & \texttt{hippocampus\_feedback\_noise\_zoomed.py} & 200 & 150 & 1000 \\
+5 & \texttt{sudoku\_partial\_grid\_completion.py} & 2000 & 150 & 1000 \\
+6 & \texttt{critical\_slowing\_down\_clean\_plot.py} & 500 & 400 & 1000 \\
+7 & \texttt{spiking\_real\_sudoku\_sweetspot.py} & -- & -- & -- \\
+8 & \texttt{spiking\_emergent\_coincidence.py} & 200 & 150 & 1000 \\
+9 & \texttt{spiking\_drive\_noise\_robustness.py} & 200 & 150 & 1000 \\
+10 & \texttt{heteroassoc\_vectorhash\_best\_examples.py} & 200 & 150 & 1000 \\
+11 & \texttt{heteroassoc\_final\_consolidation.py} & see note & 150 & 1000 \\
+12 & \texttt{hopfield\_matched\_noise\_rigorous.py} & see note & 150 & 1000 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-Figure~5 is a single-grid spiking simulation ($N{=}81$ cells) with no engram storage or
-retrieval involved, so $M$/$K$/$H$ do not apply. Figure~4 uses $K{=}400$ -- the sharpest
-crossover found in an earlier $M$--$K$ grid search -- rather than the default $150$.
-Figures~9 and 10 each have panels at different $M$: Figure~9's top-left (pipeline vs.\
+Figure~7 is a single-grid spiking simulation ($N{=}81$ cells) with no engram storage or
+retrieval involved, so $M$/$K$/$H$ do not apply. Figure~6 uses $K{=}400$ -- the sharpest
+crossover found in an earlier $M$--$K$ grid search -- rather than the default $150$. Figures~3
+and 4 both sweep query noise on paired corrupted queries, but differ in what is held fixed:
+Figure~4 fixes the separation operator to softmax and includes the conflict-mask cleanup pass;
+Figure~3 instead varies the separation operator itself, with cleanup excluded throughout, to
+isolate the operator's own behavior from the cleanup mechanism characterized in Figure~4.
+Figures~11 and 12 each have panels at different $M$: Figure~11's top-left (pipeline vs.\
 nearest-neighbor) and top-right/bottom-left (capacity cliff and Gram-matrix conditioning)
 panels use $M{=}200$ and $M{\in}\{200,300,400,500,650,800\}$ respectively, and its
-bottom-right (ridge sensitivity) panel fixes $M{=}500$; Figure~10's left panel ($M$-sweep)
+bottom-right (ridge sensitivity) panel fixes $M{=}500$; Figure~12's left panel ($M$-sweep)
 uses $M{\in}\{100,200,400,800\}$ at fixed $\sigma{=}0.3$, and its right panel (noise-sweep)
 fixes $M{=}50$.
 
@@ -1003,6 +1151,41 @@ efficient neural simulator,'' \textit{eLife} \textbf{8}, e47314 (2019).
 \bibitem{chandra2025} S.~Chandra, S.~Sharma, R.~Chaudhuri, I.~Fiete, ``Episodic and
 associative memory from spatial scaffolds in the hippocampus,'' \textit{Nature} \textbf{638},
 739--752 (2025).
+
+\bibitem{sharma2022} S.~Sharma, S.~Chandra, I.~Fiete, ``Content addressable memory without
+catastrophic forgetting by heteroassociation with a fixed scaffold,'' \textit{ICML} (2022).
+
+\bibitem{mcclelland1995} J.~L.~McClelland, B.~L.~McNaughton, R.~C.~O'Reilly, ``Why there are
+complementary learning systems in the hippocampus and neocortex: insights from the successes
+and failures of connectionist models of learning and memory,'' \textit{Psychol.\ Rev.}
+\textbf{102}, 419--457 (1995).
+
+\bibitem{gershman2025} S.~J.~Gershman, I.~Fiete, K.~Irie, ``Key-value memory in the brain,''
+\textit{Neuron} \textbf{113}, 1694--1707 (2025).
+
+\bibitem{kohonen1972} T.~Kohonen, ``Correlation matrix memories,'' \textit{IEEE Trans.\
+Comput.} \textbf{C-21}, 353--359 (1972).
+
+\bibitem{kanerva1988} P.~Kanerva, \textit{Sparse Distributed Memory}, MIT Press (1988).
+
+\bibitem{vaswani2017} A.~Vaswani, N.~Shazeer, N.~Parmar, J.~Uszkoreit, L.~Jones,
+A.~N.~Gomez, L.~Kaiser, I.~Polosukhin, ``Attention is all you need,'' \textit{NeurIPS}
+\textbf{30} (2017).
+
+\bibitem{schlag2021} I.~Schlag, K.~Irie, J.~Schmidhuber, ``Linear Transformers Are Secretly
+Fast Weight Programmers,'' \textit{ICML} (2021).
+
+\bibitem{dasgupta2017} S.~Dasgupta, C.~F.~Stevens, S.~Navlakha, ``A neural algorithm for a
+fundamental computing problem,'' \textit{Science} \textbf{358}, 793--796 (2017).
+
+\bibitem{malsburg1981} C.~von der Malsburg, ``The correlation theory of brain function,''
+Internal Report 81-2, Max Planck Institute for Biophysical Chemistry (1981).
+
+\bibitem{singer1995} W.~Singer, C.~M.~Gray, ``Visual feature integration and the temporal
+correlation hypothesis,'' \textit{Annu.\ Rev.\ Neurosci.} \textbf{18}, 555--586 (1995).
+
+\bibitem{hopfieldtank1985} J.~J.~Hopfield, D.~W.~Tank, ``Neural computation of decisions in
+optimization problems,'' \textit{Biol.\ Cybern.} \textbf{52}, 141--152 (1985).
 
 \end{thebibliography}
 

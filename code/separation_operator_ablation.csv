@@ -1,0 +1,115 @@
+operator,noise_percent,digit_cell_acc
+identity (no separation),0.0,0.11382716049382718
+softmax tau=2.0 (baseline),0.0,1.0
+softmax tau=0.5 (sharper),0.0,1.0
+polynomial n=8 (dense assoc. mem.),0.0,1.0
+threshold top-5 (sparse dist. mem.),0.0,0.13444444444444445
+argmax (winner-take-all),0.0,1.0
+identity (no separation),5.0,0.11308641975308645
+softmax tau=2.0 (baseline),5.0,1.0
+softmax tau=0.5 (sharper),5.0,1.0
+polynomial n=8 (dense assoc. mem.),5.0,1.0
+threshold top-5 (sparse dist. mem.),5.0,0.1408641975308642
+argmax (winner-take-all),5.0,1.0
+identity (no separation),10.0,0.11382716049382716
+softmax tau=2.0 (baseline),10.0,1.0
+softmax tau=0.5 (sharper),10.0,1.0
+polynomial n=8 (dense assoc. mem.),10.0,1.0
+threshold top-5 (sparse dist. mem.),10.0,0.1339506172839506
+argmax (winner-take-all),10.0,1.0
+identity (no separation),15.0,0.11296296296296295
+softmax tau=2.0 (baseline),15.0,1.0
+softmax tau=0.5 (sharper),15.0,1.0
+polynomial n=8 (dense assoc. mem.),15.0,1.0
+threshold top-5 (sparse dist. mem.),15.0,0.13506172839506173
+argmax (winner-take-all),15.0,1.0
+identity (no separation),20.0,0.11246913580246913
+softmax tau=2.0 (baseline),20.0,1.0
+softmax tau=0.5 (sharper),20.0,1.0
+polynomial n=8 (dense assoc. mem.),20.0,0.7849382716049382
+threshold top-5 (sparse dist. mem.),20.0,0.1366666666666667
+argmax (winner-take-all),20.0,1.0
+identity (no separation),25.0,0.111358024691358
+softmax tau=2.0 (baseline),25.0,1.0
+softmax tau=0.5 (sharper),25.0,1.0
+polynomial n=8 (dense assoc. mem.),25.0,0.30444444444444446
+threshold top-5 (sparse dist. mem.),25.0,0.14074074074074072
+argmax (winner-take-all),25.0,1.0
+identity (no separation),30.0,0.11283950617283951
+softmax tau=2.0 (baseline),30.0,1.0
+softmax tau=0.5 (sharper),30.0,1.0
+polynomial n=8 (dense assoc. mem.),30.0,0.15172839506172842
+threshold top-5 (sparse dist. mem.),30.0,0.13444444444444445
+argmax (winner-take-all),30.0,1.0
+identity (no separation),35.0,0.11098765432098766
+softmax tau=2.0 (baseline),35.0,1.0
+softmax tau=0.5 (sharper),35.0,1.0
+polynomial n=8 (dense assoc. mem.),35.0,0.12074074074074075
+threshold top-5 (sparse dist. mem.),35.0,0.13728395061728393
+argmax (winner-take-all),35.0,1.0
+identity (no separation),38.0,0.11320987654320985
+softmax tau=2.0 (baseline),38.0,0.9758024691358025
+softmax tau=0.5 (sharper),38.0,1.0
+polynomial n=8 (dense assoc. mem.),38.0,0.11777777777777779
+threshold top-5 (sparse dist. mem.),38.0,0.13592592592592592
+argmax (winner-take-all),38.0,1.0
+identity (no separation),40.0,0.11197530864197532
+softmax tau=2.0 (baseline),40.0,0.8828395061728395
+softmax tau=0.5 (sharper),40.0,0.9919753086419754
+polynomial n=8 (dense assoc. mem.),40.0,0.11481481481481481
+threshold top-5 (sparse dist. mem.),40.0,0.13975308641975306
+argmax (winner-take-all),40.0,0.9916049382716049
+identity (no separation),42.0,0.11197530864197532
+softmax tau=2.0 (baseline),42.0,0.528395061728395
+softmax tau=0.5 (sharper),42.0,0.7965432098765431
+polynomial n=8 (dense assoc. mem.),42.0,0.11197530864197533
+threshold top-5 (sparse dist. mem.),42.0,0.1388888888888889
+argmax (winner-take-all),42.0,0.8307407407407408
+identity (no separation),45.0,0.11185185185185187
+softmax tau=2.0 (baseline),45.0,0.167283950617284
+softmax tau=0.5 (sharper),45.0,0.292716049382716
+polynomial n=8 (dense assoc. mem.),45.0,0.11222222222222221
+threshold top-5 (sparse dist. mem.),45.0,0.12049382716049381
+argmax (winner-take-all),45.0,0.32382716049382715
+identity (no separation),48.0,0.11185185185185183
+softmax tau=2.0 (baseline),48.0,0.11691358024691358
+softmax tau=0.5 (sharper),48.0,0.11111111111111112
+polynomial n=8 (dense assoc. mem.),48.0,0.11209876543209876
+threshold top-5 (sparse dist. mem.),48.0,0.11530864197530866
+argmax (winner-take-all),48.0,0.11098765432098764
+identity (no separation),50.0,0.11098765432098766
+softmax tau=2.0 (baseline),50.0,0.10740740740740741
+softmax tau=0.5 (sharper),50.0,0.10716049382716049
+polynomial n=8 (dense assoc. mem.),50.0,0.11024691358024691
+threshold top-5 (sparse dist. mem.),50.0,0.10345679012345681
+argmax (winner-take-all),50.0,0.10864197530864197
+identity (no separation),55.00000000000001,0.11098765432098766
+softmax tau=2.0 (baseline),55.00000000000001,0.10703703703703703
+softmax tau=0.5 (sharper),55.00000000000001,0.11259259259259258
+polynomial n=8 (dense assoc. mem.),55.00000000000001,0.11111111111111112
+threshold top-5 (sparse dist. mem.),55.00000000000001,0.10666666666666667
+argmax (winner-take-all),55.00000000000001,0.11469135802469137
+identity (no separation),60.0,0.11185185185185187
+softmax tau=2.0 (baseline),60.0,0.11160493827160492
+softmax tau=0.5 (sharper),60.0,0.11543209876543209
+polynomial n=8 (dense assoc. mem.),60.0,0.11148148148148149
+threshold top-5 (sparse dist. mem.),60.0,0.11481481481481481
+argmax (winner-take-all),60.0,0.11135802469135798
+identity (no separation),70.0,0.11222222222222224
+softmax tau=2.0 (baseline),70.0,0.10876543209876541
+softmax tau=0.5 (sharper),70.0,0.11222222222222224
+polynomial n=8 (dense assoc. mem.),70.0,0.11197530864197533
+threshold top-5 (sparse dist. mem.),70.0,0.11543209876543209
+argmax (winner-take-all),70.0,0.11395061728395062
+identity (no separation),80.0,0.11037037037037038
+softmax tau=2.0 (baseline),80.0,0.11666666666666668
+softmax tau=0.5 (sharper),80.0,0.11074074074074072
+polynomial n=8 (dense assoc. mem.),80.0,0.11037037037037037
+threshold top-5 (sparse dist. mem.),80.0,0.11222222222222224
+argmax (winner-take-all),80.0,0.11061728395061728
+identity (no separation),100.0,0.11061728395061728
+softmax tau=2.0 (baseline),100.0,0.11024691358024691
+softmax tau=0.5 (sharper),100.0,0.11148148148148149
+polynomial n=8 (dense assoc. mem.),100.0,0.11
+threshold top-5 (sparse dist. mem.),100.0,0.11506172839506172
+argmax (winner-take-all),100.0,0.11530864197530866

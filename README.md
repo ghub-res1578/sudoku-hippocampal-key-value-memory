@@ -22,6 +22,16 @@ succeeds where classical and even pseudo-inverse-trained Hopfield networks -- th
 the identical learning rule, and statistically tied with ours in noise tolerance at fixed
 storage size -- collapse to zero recovery an order of magnitude sooner in storage capacity.
 
+Two further results (Sections 3.2 and 3.4) connect the architecture directly to specific prior
+work rather than by analogy: we verify the engram encoder behaves as a similarity-preserving
+hash, the property the fly olfactory mushroom-body circuit is known to provide (Spearman
+$\rho=0.974$ between input and engram similarity across a full corruption sweep), and we test
+the recent unification of correlation-matrix memory, sparse distributed memory, dense
+associative memory, and Transformer attention as one computation differing only in its
+"separation operator" (Gershman, Fiete \& Irie, 2025) by swapping that operator in our own
+readout -- finding that noise robustness tracks whether an operator sharpens by an absolute
+similarity gap or a similarity ratio, not merely how aggressively it discriminates.
+
 Read the paper first: `paper/main.pdf`. Everything below reproduces its tables and figures.
 
 ## Repository layout
@@ -80,30 +90,51 @@ python3 feedback_vs_density_sweep.py  # projection density 0.002 .. 1.0
 Each writes a `*_collapse_thresholds.csv` -- the numbers in Table 1.
 Runtime: a few minutes each; `feedback_iterate_highM.py` is the slowest (~10 min).
 
-### Section 3.2 -- Key-value recall: attention vs. regression (Table 2, Fig. 1)
+### Section 3.2 -- The engram code as a similarity-preserving hash (Fig. 1)
+```bash
+python3 hash_similarity_preservation.py
+```
+Corrupts each of 30 sampled grids' true coincidence matrix at 13 levels (0-100%), and measures
+Jaccard similarity of the corrupted vs. true same-digit pair sets against engram overlap of the
+resulting codes. Writes `hash_similarity_preservation.csv` and Figure 1 (Spearman
+$\rho=0.974$ between the two, pooled across $n=390$ corrupted instances). Runtime: under a
+minute.
+
+### Section 3.3 -- Key-value recall: attention vs. regression (Table 2, Fig. 2)
 ```bash
 python3 capacity_regression_vs_attention.py
 ```
 Writes `capacity_regression_vs_attention.csv` (raw) and
 `capacity_regression_vs_attention_capacity_estimates.csv` (Table 2), plus the capacity-curve
-PNG used in Figure 1. Runtime: ~15-20 min (sweeps $M\in\{10,\dots,2000\}$).
+PNG used in Figure 2. Runtime: ~15-20 min (sweeps $M\in\{10,\dots,2000\}$).
 
-### Section 3.3 -- Graceful degradation under query noise (Fig. 2)
+### Section 3.4 -- Separation operators: gap-based vs. ratio-based sharpening (Fig. 3)
+```bash
+python3 separation_operator_ablation.py
+```
+Holds the encoder, the $M=200$ stored engrams, and every corrupted query fixed (paired design)
+while swapping the readout's separation operator across six variants -- identity
+(correlation-matrix memory), softmax at two temperatures, a rectified-power nonlinearity
+(dense associative memory), a hard top-5 threshold (sparse distributed memory), and argmax
+(winner-take-all) -- re-running the query-noise sweep without the conflict-mask cleanup pass.
+Writes `separation_operator_ablation.csv` and Figure 3. Runtime: a few minutes.
+
+### Section 3.5 -- Graceful degradation under query noise (Fig. 4)
 ```bash
 python3 hippocampus_drive_readout.py        # writes hippocampus_drive_readout_feedback_sweep.csv
                                              #   (full 0-100% sweep, coarse steps)
 python3 hippocampus_feedback_noise_zoomed.py  # reconstructs the same engram, re-sweeps just
                                                #   35-55% at 1pp resolution, and writes the
-                                               #   two-panel Figure 2 (needs the CSV above)
+                                               #   two-panel Figure 4 (needs the CSV above)
 ```
 Full 0-100% query-noise sweep, with and without the conflict-mask cleanup pass, at $M=200$;
 the zoomed script resolves the 35-55% transition window at 1-percentage-point resolution and
 is what the rescue-peak number ($42\%$ noise, $+16.8$pp) in the text comes from. Runtime: a
 few minutes for each (`hippocampus_drive_readout.py` also runs the capacity/robustness spot
 checks used elsewhere in the paper). `hippocampus_feedback_noise_plot.py` regenerates the
-old single-panel version of Figure 2's left panel alone, if useful for other purposes.
+old single-panel version of Figure 4's left panel alone, if useful for other purposes.
 
-### Section 3.4 -- Partial-grid pattern completion (Table 3, Fig. 3)
+### Section 3.6 -- Partial-grid pattern completion (Table 3, Fig. 5)
 ```bash
 python3 sudoku_partial_grid_completion.py
 ```
@@ -112,15 +143,15 @@ Writes `sudoku_partial_grid_completion.csv` and the accuracy-vs-clue-fraction fi
 `sudoku_partial_grid_MK_iterations_sweep.py` reproduce the broader $M$-$K$-$H$ characterization
 referenced in the text (not required for the headline table). Runtime: ~5-10 min.
 
-### Section 3.5 -- Relaxation dynamics near the completion threshold (Fig. 4)
+### Section 3.7 -- Relaxation dynamics near the completion threshold (Fig. 6)
 ```bash
 python3 critical_slowing_down_test.py          # original, narrower sweep
 python3 critical_slowing_down_extended.py      # extended sweep -- generates the RAW DATA
                                                 #   (critical_slowing_down_extended.csv) used
-                                                #   for Figure 4, but its own built-in
+                                                #   for Figure 6, but its own built-in
                                                 #   analyze_and_plot() should NOT be used to
                                                 #   make the figure -- see note below
-python3 critical_slowing_down_clean_plot.py    # regenerates Figure 4 correctly from that CSV
+python3 critical_slowing_down_clean_plot.py    # regenerates Figure 6 correctly from that CSV
 python3 critical_slowing_down_universality.py  # non-universality check across (M,K)
 ```
 **Known issue, worth understanding before re-running anything here:**
@@ -139,7 +170,7 @@ as an honest negative/mixed finding. Runtime: 15-30 min each (200 trials/point f
 flagship configuration); the clean-plot script itself is instant (it only re-fits the
 already-generated CSV).
 
-### Section 3.6 -- Phase synchrony as an emergent conflict mask (Table 4, Fig. 5)
+### Section 3.8 -- Phase synchrony as an emergent conflict mask (Table 4, Fig. 7)
 ```bash
 python3 spiking_multigrid_replication_fixedweight.py   # Table 4 (8-grid replication)
 python3 spiking_real_sudoku_sweetspot.py               # single-grid version, sanity check
@@ -148,15 +179,15 @@ python3 spiking_sync_desync_test.py                    # causal random-assignmen
 python3 spiking_steady_state_phase_test.py             # anti-phase-locking test (negative
                                                         #   result) + coincidence-window
                                                         #   classifier ceiling (63-65%)
-python3 spiking_raster_comparison.py                   # Figure 5-style raster panels
+python3 spiking_raster_comparison.py                   # Figure 7-style raster panels
 ```
 Each spiking trial simulates 3000 ms (30 oscillation cycles) and takes roughly 6-10 seconds;
 the multigrid replication (8 grids) takes about a minute, the full causal/anti-phase sweeps
 several minutes each.
 
-### Section 3.7 -- Emergent coincidence matrix closes the loop (Tables 5-6, Fig. 6)
+### Section 3.9 -- Emergent coincidence matrix closes the loop (Tables 5-6, Fig. 8)
 ```bash
-python3 spiking_emergent_coincidence.py           # Table 5 + Figure 6 (11 clue fractions x
+python3 spiking_emergent_coincidence.py           # Table 5 + Figure 8 (11 clue fractions x
                                                    #   25 trials -- ~40-60 min)
 python3 spiking_paired_significance_sweep.py      # Table 6: paired Wilcoxon test, dynamics
                                                    #   vs. hard-coded rule (7 clue fractions x
@@ -166,23 +197,23 @@ These are the longest-running scripts in the repository (each launches hundreds 
 independent 3000 ms spiking simulations). Precomputed output CSVs are included in `code/` so
 you can inspect and re-plot results without re-running the simulations.
 
-### Section 3.8 -- Graceful degradation under drive-current noise (Fig. 7)
+### Section 3.10 -- Graceful degradation under drive-current noise (Fig. 9)
 ```bash
 python3 spiking_drive_noise_robustness.py   # ~15-20 min (7 noise levels x 20 trials); also
-                                             #   regenerates Figure 7 (calls plot() at the end)
+                                             #   regenerates Figure 9 (calls plot() at the end)
 ```
-Same clue fraction (0.30) as the Section 3.7 headline results, but corrupts every known
+Same clue fraction (0.30) as the Section 3.9 headline results, but corrupts every known
 cell's drive current with Gaussian jitter instead of leaving cells unknown -- a continuous,
 rather than categorical, robustness test specific to the spiking mechanism.
 
-### Section 3.9 -- Why low clue fractions are hard (diagnostic)
+### Section 3.11 -- Why low clue fractions are hard (diagnostic)
 ```bash
 python3 spiking_low_clue_diagnostic_fixedweight.py
 ```
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
 
-### Section 4 -- Cross-modal heteroassociation (Tables 7-10, Figs. 8-10)
+### Section 4 -- Cross-modal heteroassociation (Tables 7-10, Figs. 10-12)
 
 Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
 `tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
@@ -192,13 +223,13 @@ python3 heteroassoc_vectorhash_pipeline.py       # the core M=200 MNIST pipeline
                                                   #   checks (defines the reusable functions
                                                   #   train_pseudo_inverse_dual, k_wta,
                                                   #   iterate_sudoku_attractor, etc.)
-python3 heteroassoc_vectorhash_best_examples.py  # Figure 8: largest-rescue-gap examples,
+python3 heteroassoc_vectorhash_best_examples.py  # Figure 10: largest-rescue-gap examples,
                                                   #   3 datasets
 python3 heteroassoc_vectorhash_generalized.py    # Table 7 precursor: dataset/M generalization
 python3 heteroassoc_final_consolidation.py       # Table 7 (rigorous, N=200/point, Wilson CI) +
                                                   #   Section 4.3's k-NN baseline/McNemar test +
                                                   #   Section 4.4's capacity/conditioning/ridge
-                                                  #   diagnostics -- Figure 9
+                                                  #   diagnostics -- Figure 11
 python3 heteroassoc_knn_vs_M.py                  # Table 8: does the k-NN gap close as M grows?
                                                   #   (no -- it widens from +3.5pp at M=200 to
                                                   #   +96.0pp at M=2000), paired McNemar per M
@@ -222,7 +253,7 @@ python3 hopfield_vs_our_network_comparison.py    # original bit-flip-vs-Gaussian
                                                   #   Section 4.5 text
 python3 hopfield_pinv_basin_shrinkage.py         # standalone reproduction of that same
                                                   #   illustration (100%/25%/0% exact)
-python3 hopfield_matched_noise_rigorous.py       # Table 10, Figure 10: the headline four-way
+python3 hopfield_matched_noise_rigorous.py       # Table 10, Figure 12: the headline four-way
                                                   #   comparison, redone with N=200/point, Wilson
                                                   #   CIs, and a SINGLE shared noise model (every
                                                   #   method sees the same Gaussian-corrupted
