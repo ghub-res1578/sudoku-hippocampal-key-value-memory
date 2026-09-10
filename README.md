@@ -133,6 +133,15 @@ while swapping the readout's separation operator across six variants -- identity
 (dense associative memory), a hard top-5 threshold (sparse distributed memory), and argmax
 (winner-take-all) -- re-running the query-noise sweep without the conflict-mask cleanup pass.
 Writes `separation_operator_ablation.csv` and Figure 3. Runtime: a few minutes.
+```bash
+python3 separation_operator_competitor_ratio.py
+```
+Reproduces the mechanistic numbers in the text (not a figure/table): the best-competing
+wrong memory's zero-noise similarity is $3.39\times$ tighter than the true match's, far
+below the naive $6.67\times$ ($=H/K$) predicted from the mean chance-overlap floor alone
+-- an extreme-value effect of having $M-1=199$ competitors -- and this ratio shrinks to
+$1.90$ at $20\%$ query noise and $1.46$ at $30\%$, tracking the point where the
+rectified-polynomial operator collapses in Figure 3. Runtime: under a minute.
 
 ### Section 3.5 -- Graceful degradation under query noise (Fig. 4)
 ```bash
