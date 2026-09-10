@@ -689,11 +689,22 @@ memory cliff Vector-HaSH is explicitly designed to avoid.
 
 An image $x\in\mathbb{R}^{D}$ is linked to its paired grid's engram $h\in\{0,1\}^H$ by two
 ridge-regularized pseudo-inverse matrices, $W_{SI}$ (image$\to$engram) and $W_{IS}$
-(engram$\to$image), trained as a \emph{bidirectional, one-memory-per-pair} association --
-not many exemplars regressed onto one shared class target, which we found generalizes poorly
-(direct engram-overlap measurement showed it collapsing from $0.835$ to $0.330$ between
-$\sigma=0$ and $\sigma=0.10$ pixel noise, versus a smooth $1.0\to0.869$ decay for the
-bidirectional rule at matched noise). Recall is a four-stage loop: a noisy image cue is
+(engram$\to$image), trained as a \emph{bidirectional, one-memory-per-pair} association, each
+of the $M$ stored images given its own unique target engram -- not many exemplars regressed
+onto one shared class target. We originally reported that alternative as collapsing sharply
+under noise ($0.835\to0.330$ between $\sigma=0$ and $\sigma=0.10$); that test used the same
+too-small default ridge diagnosed and corrected in Section~\ref{sec:capacity-hetero}, and we
+have since verified, changing only the ridge value and nothing else, that it does not actually
+cliff: properly regularized, the identical setup degrades gracefully ($0.846\to0.725$ over the
+same step) and supports genuine, if coarse, classification ($86\%$ accuracy decoding which of
+$9$ pooled classes a held-out image belongs to, at zero noise, declining gracefully with
+noise). We correct the earlier claim rather than let a regularization artifact stand as
+evidence against shared targets in general. The real, structural reason one-memory-per-pair is
+required for \emph{this} task is different: a shared target supports at most as many
+distinguishable outputs as there are distinct targets (nine, in the corrected test above),
+whereas recovering a \emph{specific} one of $M$ stored images requires $M$ mutually
+distinguishable targets -- exactly what one-memory-per-pair provides and a shared per-class
+target structurally cannot, regardless of regularization. Recall is a four-stage loop: a noisy image cue is
 projected through $W_{SI}$ and thresholded to an initial engram; the existing attention readout
 and conflict-mask cleanup (Section~2.1) iterate this engram to a Sudoku-consistent fixed point,
 exactly as for a partial-grid cue; the cleaned engram is projected back through $W_{IS}$ to

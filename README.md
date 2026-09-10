@@ -63,14 +63,29 @@ sweep) and found *not* to reliably outperform the reported non-plastic, fixed-we
 dynamics -- the fixed-weight mechanism already matches the hard-coded rule, and we judged
 added mechanism without added, validated benefit to be the wrong trade.
 
-Several earlier cross-modal encoder designs are also not included, since they were diagnosed
-dead ends superseded by the final architecture in Section 4: mapping images to a single
-shared per-class target via ridge regression (generalizes poorly, a cliff-like collapse under
-noise), and a fixed-random-projection + softmax-attention lookup over stored image exemplars
+One earlier cross-modal encoder design is not included for a genuine failure mode: a
+fixed-random-projection + softmax-attention lookup over stored image exemplars
 (mathematically continuous but effectively winner-take-most given the similarity scale,
-producing bimodal, non-monotonic behavior). The reported architecture -- bidirectional,
-one-memory-per-pair pseudo-inverse heteroassociation -- was arrived at specifically to fix
-both failure modes, and is the only encoder design included here.
+producing bimodal, non-monotonic behavior).
+
+A second design -- mapping many exemplars to a single shared per-class target via ridge
+regression -- was originally excluded here as "generalizes poorly, a cliff-like collapse
+under noise," based on `heteroassoc_W_IH_overlap_vs_noise.py`. That claim has since been
+corrected (`heteroassoc_W_IH_ridge_corrected.py`, `paper/main.tex` Section 4.1): the cited
+test used the same too-small default ridge diagnosed and fixed in Section 4.4, and with
+*only* that value corrected (nothing else changed), the identical setup degrades gracefully
+instead of cliffing (overlap $0.846\to0.725$ between $\sigma=0$ and $\sigma=0.10$, vs. the
+originally-reported $0.835\to0.330$) and supports genuine 9-way classification (86% at zero
+noise). It is still not used for the main image-to-Sudoku-grid pipeline, but for a real,
+structural reason rather than the originally-claimed one: a shared target can only support
+as many distinguishable outputs as there are distinct targets, while recovering a *specific*
+one of $M$ stored images needs $M$ mutually distinguishable targets -- exactly what
+one-memory-per-pair (the reported architecture) provides and a shared per-class target
+structurally cannot, regardless of regularization. Unlike the softmax-lookup dead end above,
+both the original and corrected scripts for this one are kept in `code/` -- not because the
+design is used anywhere in the main pipeline, but so the correction itself is fully
+reproducible: run both and see the before/after directly, rather than take the correction on
+faith.
 
 ## Reproducing each result
 
