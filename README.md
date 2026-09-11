@@ -241,7 +241,7 @@ python3 spiking_low_clue_diagnostic_fixedweight.py
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
 
-### Section 4 -- Cross-modal heteroassociation (Tables 7-12, Figs. 10-14; Table 14/Fig. 15 in the Appendix)
+### Section 4 -- Cross-modal heteroassociation (Tables 7-16, Figs. 10-18; Table 17/Fig. 19 in the Appendix)
 
 Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
 `tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
@@ -265,9 +265,18 @@ python3 heteroassoc_digit_classifier_vs_baseline_confusion.py  # Table 8, Figure
                                                   #   off-diagonal error-pattern correlation
                                                   #   test (r=0.71/0.68 vs. ours, 0.55 between
                                                   #   the two baselines)
-python3 heteroassoc_digit_classifier_best_worst.py       # Appendix Figure 15: one best and
+python3 heteroassoc_digit_classifier_best_worst.py       # Appendix Figure 19: one best and
                                                   #   one worst held-out classification per
                                                   #   digit class, zero noise
+python3 heteroassoc_digit_classifier_random_scaffold_ablation.py  # Section 4.2 caveat: swaps
+                                                  #   the 9 Sudoku-derived class targets for 9
+                                                  #   random K-sparse vectors (no Sudoku
+                                                  #   structure) -- accuracy is unchanged
+                                                  #   (79.0% vs. 78.8%, p=0.91), so the
+                                                  #   scaffold contributes nothing here; the
+                                                  #   classifier has no cleanup/attractor pass
+                                                  #   either, unlike Section 4.1's
+                                                  #   reconstruction pipeline
 python3 heteroassoc_vectorhash_generalized.py    # Table 9 precursor: dataset/M generalization
 python3 heteroassoc_final_consolidation.py       # Table 9 (rigorous, N=200/point, Wilson CI) +
                                                   #   Section 4.4's k-NN baseline/McNemar test +
@@ -303,7 +312,49 @@ python3 hopfield_matched_noise_rigorous.py       # Table 12, Figure 14: the head
                                                   #   image; the three Hopfield variants get it
                                                   #   bipolarized) -- this is what the paper
                                                   #   reports, not the script above
+python3 hopfield_modern_sdm_dam_comparison.py    # Section 4.7 -- Table 13 (construction),
+                                                  #   Figure 15 (M-sweep + M=50 noise-sweep):
+                                                  #   extends the comparison to Modern Hopfield
+                                                  #   (Ramsauer 2020), sparse distributed memory
+                                                  #   (Kanerva), and dense associative memory
+                                                  #   (Krotov-Hopfield), each built as a complete
+                                                  #   standalone system, not a swapped operator
+                                                  #   inside our own encoder (contrast Section
+                                                  #   3.4). Also re-validates beta/n from scratch
+                                                  #   on this data (naive carryovers from
+                                                  #   elsewhere in this paper fail near-totally
+                                                  #   even at zero noise)
+python3 hopfield_comparison_followup_H_and_highM_noise.py  # Table 14, Figure 17 (does bigger H
+                                                  #   close the gap? M=800, sigma=0.3, H swept
+                                                  #   1000-3000) and Figure 16 (noise-sweep at
+                                                  #   M=800, alongside the existing M=50 sweep,
+                                                  #   to show the gap is a genuine high-M
+                                                  #   collapse in noise tolerance, not a single
+                                                  #   data point)
+python3 vectorhash_modular_scaffold_comparison.py  # Section 4.8 -- Table 15 (one-shot vs.
+                                                  #   recurrent cleanup): builds Vector-HaSH's
+                                                  #   actual modular addressing mechanism (10
+                                                  #   coprime-period modules, CRT-assigned
+                                                  #   codes) rather than only its
+                                                  #   heteroassociation rule, first with a naive
+                                                  #   independent per-module argmax cleanup
+                                                  #   (collapses to 7.5% by M=800), then with a
+                                                  #   genuine recurrent Hopfield-style relaxation
+                                                  #   over the space of known valid codes
+                                                  #   (recovers to 81.0% at M=800) -- same
+                                                  #   M-sweep/noise-sweep grid as
+                                                  #   hopfield_modern_sdm_dam_comparison.py
+python3 knn_at_sigma03_matched.py                # k-NN baseline reconciled to the exact
+                                                  #   sigma=0.3, M in {100,200,400,800}
+                                                  #   condition used throughout Section 4.7-4.8
+                                                  #   (100% at every M tested)
+python3 final_hetero_comparison_plot.py          # Figure 18: reads the CSVs from the two
+                                                  #   scripts above and plots the one-shot-vs-
+                                                  #   recurrent ablation (run the two scripts
+                                                  #   first)
 ```
+Table 16 (storage/time complexity) is an analytical comparison, not a simulation -- no script
+to run for it; see Section 4.8 of the paper for the derivation.
 Runtime: most of these build an M-item store from scratch per configuration and are a few
 seconds to low minutes each; `heteroassoc_final_consolidation.py`, `heteroassoc_knn_vs_M.py`,
 and `hopfield_matched_noise_rigorous.py` sweep several $M$/noise values at $N{=}200$/point and
@@ -312,6 +363,17 @@ and can take 10+ minutes. `heteroassoc_digit_classifier_seed_sweep.py` retrains 
 from scratch across 6 seeds (a couple of minutes); `heteroassoc_digit_classifier_vs_baseline_confusion.py`
 additionally requires `scikit-learn` (for the $k$-NN and logistic-regression baselines) and is
 a few minutes, mostly spent fitting logistic regression on $4500\times784$ raw pixels.
+`hopfield_modern_sdm_dam_comparison.py` and `hopfield_comparison_followup_H_and_highM_noise.py`
+each build several $M$-item stores at $N{=}200$/point and take a few minutes total.
+`vectorhash_modular_scaffold_comparison.py` is a few minutes (no iterative relaxation needed for
+the one-shot pass; the recurrent decode adds a Hopfield-style fixed-point iteration per trial);
+`knn_at_sigma03_matched.py` is dominated by MNIST loading, a couple of minutes total;
+`final_hetero_comparison_plot.py` only reads existing CSVs and is instant. Note: when
+running these from a network-mounted working directory, redirect stdout/stderr to a local path
+(e.g. `python3 script.py > /tmp/log.txt 2>&1`) rather than one on the mount -- intermittent
+mount I/O, not the computation itself, caused sporadic silent process termination during
+development (confirmed by rerunning the identical computation with output redirected locally,
+which completed in seconds).
 
 ## Core modules
 

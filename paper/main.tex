@@ -66,7 +66,18 @@ succeeds where classical and even pseudo-inverse-trained Hopfield networks -- th
 the identical learning rule we do, and statistically tied with ours in noise tolerance at fixed
 storage size -- collapse to zero recovery an order of magnitude sooner in storage capacity,
 isolating the separate error-correcting attractor, not the learning rule, as the source of the
-graceful degradation. A separation-operator ablation -- swapping the readout's softmax
+graceful degradation. This capacity-scaling advantage does not, however, extend to the broader
+associative-memory literature: benchmarked further against Modern Hopfield networks and dense
+associative memory, given properly re-validated (not naively carried-over) separation
+sharpness, both substantially outperform our raw recovery accuracy at high storage load under
+matched noise ($99.0\%$ and $96.0\%$ vs.\ our $57.5\%$ at $M{=}800$), a gap a $3\times$ larger
+engram narrows by about half but does not close -- an honest limitation we report because the
+architecture's case rests elsewhere: unlike every alternative tested, whose stored
+representation \emph{is} the content itself, our key (a sparse engram drawn from an
+astronomically large combinatorial space) is entirely decoupled from the value it is bound to,
+letting one fixed key infrastructure serve arbitrary content \emph{and} the original
+Sudoku-legality task at once, while still matching these purpose-built alternatives at
+low-to-moderate noise. A separation-operator ablation -- swapping the readout's softmax
 nonlinearity for five alternatives spanning the correlation-matrix-memory, sparse-distributed-memory,
 and dense-associative-memory literatures -- shows that noise robustness tracks whether an
 operator sharpens by an absolute similarity gap or a similarity ratio, not merely how
@@ -74,8 +85,16 @@ aggressively it discriminates: ratio-based sharpening collapses at roughly half 
 gap-based sharpening tolerates, given matched zero-noise selectivity. We also verify directly,
 rather than assume by analogy to sparse random-projection hashing circuits, that the encoder
 preserves relative similarity between inputs (Spearman $\rho=0.97$ between raw coincidence-matrix
-similarity and engram overlap across the full corruption range). All code, data, and
-reproduction instructions accompany this paper.
+similarity and engram overlap across the full corruption range). We additionally build Vector-HaSH's
+actual modular addressing mechanism, not just its heteroassociation rule, and find it beats our
+own flat scaffold once given a genuinely recurrent (not independent) cross-module correction step
+-- a result against our own architecture, obtained by testing rather than only citing a
+comparison. A complexity analysis clarifies what this buys: neither scaffold escapes $O(M)$
+query-time growth, the same class occupied by $k$-nearest-neighbor and the sharpest associative
+memories tested; the genuine advantage is a discrimination capacity decoupled from content
+dimensionality and an $O(M)$-index storage cost, while content fidelity remains bounded by the
+same image effective-rank ceiling for every method. All code, data, and reproduction
+instructions accompany this paper.
 \end{abstract}
 
 \section{Introduction}
@@ -132,13 +151,27 @@ work to speak to:
   the spirit of Hopfield and Tank's neural optimization networks \cite{hopfieldtank1985}. This
   is also a question in the spirit of the broader statistical mechanics of constraint
   satisfaction and random $k$-SAT \cite{mezard2002,mezard2009}, which we invoke here as
-  motivating context rather than as a universality result we claim to extend.
+  motivating context rather than as a universality result we claim to extend. Unlike gradient
+  descent on an energy function or symbolic backtracking search -- the two standard ways to
+  settle a combinatorial constraint problem, and the mechanisms every associative-memory
+  baseline we compare against in Section~\ref{sec:hetero} ultimately relies on -- this
+  mechanism has no encoded objective function at all: local excitatory/inhibitory coupling and
+  emergent phase synchrony do the work.
 \end{itemize}
 
 We additionally ask, in Section~\ref{sec:hetero}, whether the engram layer generalizes beyond
-a single content type: we heteroassociate natural images to Sudoku engrams using the
-bidirectional pseudo-inverse mechanism of Vector-HaSH \cite{chandra2025}, and benchmark the
-result directly against classical Hopfield networks on identical data.
+a single content type. Every classical associative memory couples its storage capacity to its
+own neuron count: a Hopfield-style network's stored patterns \emph{are} its state vector, so
+capacity is inescapably a function of that vector's dimension. We instead heteroassociate
+natural images to Sudoku engrams using the bidirectional pseudo-inverse mechanism of
+Vector-HaSH \cite{chandra2025}, so that the \emph{key} -- a sparse engram drawn from an
+astronomically large combinatorial space, valid $9\times9$ grids numbering on the order of
+$6.7\times10^{21}$ -- is entirely decoupled from the \emph{value} it is bound to, which can be
+arbitrary content of any dimension. We benchmark the result directly against classical Hopfield
+networks, and, further, against Modern Hopfield networks, sparse distributed memory, and dense
+associative memory (Section~\ref{sec:modern-comparison}) -- three architectures whose stored
+representation \emph{is} the content itself -- to test directly what this decoupling costs and
+what it buys.
 
 Our central empirical result is that these three layers compose: a physically-implemented,
 dynamics-based legality check, built entirely from local excitatory/inhibitory coupling with
@@ -686,6 +719,7 @@ mechanism, and we benchmark the result against classical Hopfield networks, whos
 memory cliff Vector-HaSH is explicitly designed to avoid.
 
 \subsection{Architecture}
+\label{sec:hetero-arch}
 
 An image $x\in\mathbb{R}^{D}$ is linked to its paired grid's engram $h\in\{0,1\}^H$ by two
 ridge-regularized pseudo-inverse matrices, $W_{SI}$ (image$\to$engram) and $W_{IS}$
@@ -806,7 +840,21 @@ either correlates with ours.)
 Representative best- and worst-case classified digit images are given in the Appendix
 (Figure~\ref{fig:digit-best-worst}), alongside the exact train/test set construction.
 
+A caveat on what this classifier actually uses: unlike the image-reconstruction pipeline of
+Section~\ref{sec:hetero-arch}, it has no cleanup/attractor pass at all -- inference is a single
+forward pass (image $\to$ $W_{IH}$ $\to$ top-$K$ threshold $\to$ nearest stored target by
+overlap), with no iterative Sudoku-legality correction. We also tested whether the Sudoku
+scaffold itself matters by replacing the $9$ Sudoku-derived class-target engrams with $9$
+independently drawn random $K$-sparse binary vectors of otherwise identical statistics (same
+$H$, $K$, no Sudoku structure), retraining the identical ridge regression on the identical
+split: accuracy is statistically indistinguishable from the real scaffold ($79.0\%$ vs.\
+$78.8\%$, two-proportion $z=-0.12$, $p=0.91$). The scaffold contributes nothing beyond
+supplying $9$ arbitrary, mutually distinguishable sparse binary labels; the classification
+itself is done entirely by the ridge-regression map and the top-$K$ thresholding nonlinearity
+that follows it.
+
 \subsection{Generalization across datasets}
+\label{sec:generalization}
 
 Table~\ref{tab:hetero-datasets} sweeps corruption at $M{=}200$, $H{=}1000$, $K{=}150$ across
 three datasets of increasing dissimilarity from the original: MNIST ($28\times28$), Fashion-MNIST
@@ -1028,6 +1076,291 @@ content-\emph{independent} way (Section~2); ours is content-dependent (legality-
 still delivers the qualitative signature the scaffold is meant to produce, and does so an
 order of magnitude beyond where the shared learning rule alone can reach.
 
+\subsection{Comparison to Modern Hopfield, sparse distributed memory, and dense associative
+memory: capacity as a property of the key space, not the neuron count}
+\label{sec:modern-comparison}
+
+Section~\ref{sec:hop}'s conclusion -- that our advantage over classical/pseudo-inverse Hopfield
+is capacity scaling, not noise tolerance -- raises an obvious next question: does that
+advantage hold against the broader associative-memory literature, or only against the specific
+three variants tested? Gershman, Fiete \& Irie's unification (already tested at the level of a
+single swapped nonlinearity in Section~\ref{sec:separation}) names three further architectures
+we had not yet built as complete, independently-constructed systems: Modern (continuous)
+Hopfield networks \cite{ramsauer2020}, sparse distributed memory \cite{kanerva1988}, and dense
+associative memory \cite{krotov2016}. Unlike Section~\ref{sec:separation}'s test, which swapped
+a nonlinearity inside \emph{our own} encoder, this comparison builds each architecture with its
+own native representation -- critically, Modern Hopfield and dense associative memory operate
+directly on the full, uncompressed image, with no sparse engram bottleneck at all -- so it
+tests something Section~\ref{sec:separation} could not: whether compressing into a fixed
+$H$-dimensional sparse code costs anything relative to a full continuous or dense store at
+matched stored-item count.
+
+\textbf{Construction.} Table~\ref{tab:construction} gives unit and parameter counts for all
+seven methods at $M{=}200$. Modern Hopfield and dense associative memory need no trained weight
+matrix at all -- just the $M\times784$ pattern matrix itself, smaller than the three Hopfield
+variants' fixed $784\times784$ weight matrix once $M<784$. Sparse distributed memory uses
+$1000$ fixed random ``hard locations'' (matched to our $H{=}1000$ for a resource-comparable
+test). Our network is the only architecture whose stored representation ($H{=}1000$-dimensional
+sparse engrams) is decoupled from the content's own dimension ($784$ for MNIST): the same fixed
+$W_{SH}$ and the same class of engram serves this task, the three other image datasets of
+Section~\ref{sec:generalization}, and the original Sudoku-legality task of Sections 2--3,
+whereas every other method's stored representation \emph{is} the content and must be rebuilt
+per domain.
+
+\refstepcounter{table}\label{tab:construction}
+\noindent\textbf{Table \thetable.} Construction: unit/parameter counts and retrieval mechanism, $M{=}200$.
+\begin{center}
+\scriptsize
+\begin{tabular}{lccl}
+\toprule
+Method & State units & Stored parameters & Retrieval \\
+\midrule
+Classical Hopfield & 784 & $784{\times}784$ weights & iterative, $\mathrm{sign}(Ws)$ \\
+Covariance-rule Hopfield & 784 & $784{\times}784$ weights & iterative, $\mathrm{sign}(Ws)$ \\
+Pseudo-inverse Hopfield & 784 & $784{\times}784$ weights & iterative, $\mathrm{sign}(Ws)$ \\
+Modern Hopfield \cite{ramsauer2020} & 784 & $200{\times}784$ patterns & iterative softmax fixed-point \\
+Sparse distributed memory \cite{kanerva1988} & 784 & 1000 locations $\times$ 784 & one-shot, radius threshold \\
+Dense associative memory \cite{krotov2016} & 784 & $200{\times}784$ patterns & iterative power relaxation \\
+Ours & $1000{+}784$ & $W_{SH}{:}1000{\times}6561$; 200 pairs & attention $+$ attractor cleanup \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Tuning transparency.} Naively carrying over parameters tuned in a different context --
+softmax inverse-temperature $\beta{=}0.5$ (this paper's own default) for Modern Hopfield, and
+exponent $n{=}8$ (Section~\ref{sec:separation}'s dense-associative-memory-style operator) for
+dense associative memory -- both fail almost totally, \emph{even at zero noise}: real MNIST
+images bipolarize and normalize far more mutually correlated than either parameter assumes
+(mean pairwise Hamming distance $148/784$ vs.\ ${\sim}392/784$ expected for random bipolar
+vectors of the same dimension). Following the same discipline used to correct the ridge-scaling
+question (Section~\ref{sec:capacity-hetero}), we re-validated both parameters from scratch by
+checking zero-noise self-recovery across the full $M{=}100$--$800$ range \emph{before} looking
+at any noise-robustness numbers: $\beta{=}60$ and $n{=}60$ both give clean recovery throughout,
+and are used for every result below. We report this transparently rather than silently picking
+values that happened to work, following this project's standing practice of surfacing
+parameter-sensitivity issues rather than absorbing them into an unstated default
+(Section~\ref{sec:capacity-hetero}, README).
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/hopfield_modern_sdm_dam_comparison.png}
+\end{center}
+\refstepcounter{figure}\label{fig:modern-comparison}
+\noindent\textbf{Figure \thefigure.} Left: exact recovery vs.\ $M$, all seven methods, shared Gaussian noise
+($\sigma{=}0.3$), Wilson 95\% CIs. Right: exact recovery vs.\ noise at fixed $M{=}50$.
+
+\textbf{Results.} At $M{=}800$, $\sigma{=}0.3$ (Figure~\ref{fig:modern-comparison}, left):
+Modern Hopfield reaches $99.0\%$ and dense associative memory $96.0\%$, both far ahead of our
+$57.5\%$ -- the capacity-scaling advantage established in Section~\ref{sec:hop} does
+\emph{not} generalize to these two architectures once they are given comparably sharp
+separation. Sparse distributed memory fails completely ($0\%$) at every $M$ and every noise
+level tested, joining classical and covariance-rule Hopfield -- but for a directly analogous,
+mechanistically understood reason, not a separate defect: the same implementation recovers
+$94\%$ of random bipolar patterns at matched scale (its native, designed-for regime), so the
+failure traces to the same real-image correlation problem diagnosed for classical Hopfield in
+Section~\ref{sec:hop}, applied to a different addressing scheme with the same near-orthogonality
+assumption.
+
+The noise-sweep at fixed, low $M{=}50$ (Figure~\ref{fig:modern-comparison}, right) tells a
+different story: all four of pseudo-inverse Hopfield, Modern Hopfield, dense associative
+memory, and ours are statistically indistinguishable through $\sigma{=}0.4$--$0.5$, and remain
+broadly comparable out to $\sigma{=}1.0$. The large gap only opens up at high $M$ -- which the
+single $M{=}50$ noise-sweep alone cannot reveal. Repeating the noise-sweep at $M{=}800$
+(Figure~\ref{fig:modern-comparison-highM}) confirms this directly: our network holds up
+through $\sigma{\leq}0.2$ ($\geq91\%$, comparable to Modern Hopfield's $99\%$ and dense
+associative memory's $96.5\%$) but then collapses far earlier and far more steeply than either
+alternative, reaching floor by $\sigma{\approx}0.6$ while dense associative memory barely moves
+across the entire range ($81.5\%$ even at $\sigma{=}1.0$).
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/hopfield_modern_sdm_dam_noise_sweep_low_vs_high_M.png}
+\end{center}
+\refstepcounter{figure}\label{fig:modern-comparison-highM}
+\noindent\textbf{Figure \thefigure.} Exact recovery vs.\ noise, all seven methods, at low memory ($M{=}50$, left) vs.\
+high memory ($M{=}800$, right) -- the same $\sigma{=}0.3$ gap seen in Figure~\ref{fig:modern-comparison}
+is part of a genuine, $M$-dependent collapse in noise tolerance, not an isolated data point.
+
+\textbf{Does a bigger engram close the gap?} The high-$M$ collapse is consistent with the
+engram-side capacity ceiling (bounded by $\min(M,H)$) identified in
+Section~\ref{sec:capacity-hetero}, distinct from the architecture-independent image
+effective-rank ceiling: at $M{=}800$ approaching $H{=}1000$, that ceiling is close enough to
+bind. Scaling $H$ from $1000$ to $3000$ ($K{=}0.15H$ throughout) at the exact condition with the
+largest gap ($M{=}800$, $\sigma{=}0.3$) recovers substantially, though not completely:
+
+\refstepcounter{table}\label{tab:H-scaling-comparison}
+\noindent\textbf{Table \thetable.} Does bigger $H$ close the gap with Modern Hopfield/dense associative
+memory? $M{=}800$, $\sigma{=}0.3$, $n{=}200$/point.
+\begin{center}
+\begin{tabular}{cccc}
+\toprule
+$H$ & $K$ & Exact recovery & 95\% CI \\
+\midrule
+1000 & 150 & 57.5\% & [50.6, 64.1] \\
+1500 & 225 & 70.5\% & [63.8, 76.4] \\
+2000 & 300 & 74.5\% & [68.0, 80.0] \\
+3000 & 450 & 78.0\% & [71.8, 83.2] \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent(For reference, at $H{=}1000$: Modern Hopfield $99.0\%$, dense associative memory $96.0\%$.)
+
+\begin{center}
+\includegraphics[width=0.7\linewidth]{figures/heteroassoc_H_scaling_at_M800_sigma03.png}
+\end{center}
+\refstepcounter{figure}\label{fig:H-scaling-comparison}
+\noindent\textbf{Figure \thefigure.} Exact recovery vs.\ $H$ at the $M{=}800$, $\sigma{=}0.3$ condition with the
+largest gap, dashed lines marking Modern Hopfield and dense associative memory's $H{=}1000$-comparison values.
+
+Tripling $H$ closes about half the gap, with clearly diminishing returns -- consistent with a
+real but bounded engram-side bottleneck, not a free parameter that erases the difference
+entirely.
+
+\textbf{What this means for the architecture's value proposition.} Modern Hopfield and dense
+associative memory's stored representation \emph{is} the image itself: their capacity is a
+direct function of the content's own dimension, exactly the ``neuron-number-limits-capacity''
+coupling classical associative-memory theory assumes. Our architecture instead separates the
+\emph{key} (a sparse engram drawn from an astronomically large combinatorial space -- valid
+$9\times9$ Sudoku grids number on the order of $6.7\times10^{21}$ -- entirely independent of
+the content's own representation) from the \emph{value} (here, an arbitrary image, but Section~
+\ref{sec:generalization} shows the same key works for three unrelated content types, and
+Sections 2--3 show it simultaneously supports the Sudoku-legality task itself). This decoupling
+is what Section~\ref{sec:generalization} demonstrates across datasets and what this section
+prices honestly: at matched, currently-modest engram size, we pay for that decoupling in raw
+noise tolerance at high $M$ relative to two architectures whose entire representation is
+dedicated to exactly this one task. The two are not in conflict -- a single fixed key
+infrastructure serving arbitrary content and simultaneously solving a hard combinatorial
+constraint problem is a different kind of claim than ``best available image-noise-recovery
+system,'' and Table~\ref{tab:construction} shows why the two are not free to compare on raw
+accuracy alone: three of the six alternatives (all but pseudo-inverse Hopfield) have no
+mechanism whatsoever for the Sudoku-completion task this same engram also performs. Where the
+two claims overlap -- recovery accuracy at low-to-moderate noise -- our architecture already
+matches these two purpose-built alternatives (Figure~\ref{fig:modern-comparison-highM}, right
+panel, $\sigma{\leq}0.2$), which is the regime relevant if downstream error correction is
+handled separately, as it is in this architecture (see the Discussion for how this connects to
+the emergent spiking mechanism of Sections~\ref{sec:sync}--\ref{sec:emergent}).
+
+One further, important scoping note: the cleanup step used throughout this section and
+Section~\ref{sec:hop} is the \emph{symbolic} conflict-mask attractor of Section~2.1, not the
+spiking network of Sections~\ref{sec:sync}--\ref{sec:emergent}. The two are shown elsewhere in
+this paper to be statistically indistinguishable on the core Sudoku-completion task
+(Table~\ref{tab:wilcoxon}), but that equivalence has not been separately re-verified for the
+image-heteroassociation pipeline specifically, and this comparison should not be read as a test
+of the spiking mechanism.
+
+\subsection{A modular, Vector-HaSH-style scaffold: does the actual addressing mechanism help?}
+\label{sec:vectorhash-scaffold}
+
+Section~\ref{sec:hetero} borrows Vector-HaSH's bidirectional pseudo-inverse heteroassociation
+rule but keeps our own flat, non-modular scaffold ($W_{SH}$ random projection $+$ $k$-WTA) for
+the key. Vector-HaSH's own defining mechanism is different: several small, pairwise-coprime
+periodic modules (grid-cell-like), each contributing a one-hot code for its own residue of a
+stored item's index, so the combined code addresses a space of size $\prod_i p_i$ using only
+$\sum_i p_i$ total units. We test this mechanism directly rather than only its heteroassociation
+rule: $10$ modules with prime periods $97$--$139$ ($\sum p_i=1164$, comparable to our own
+$H{=}1000$; $\prod p_i\approx4.2\times10^{20}$), each stored item's code fixed by its index via
+the Chinese Remainder Theorem, with a pseudo-inverse encoder trained to map the raw image to
+this code -- the direct analogue of $W_{SI}$ in Section~\ref{sec:hetero}.
+
+\textbf{Cleanup must be recurrent, not independent.} A naive cleanup -- snap each module's
+continuous estimate to its own nearest phase, independently -- collapses far faster with $M$
+than every other method in Table~\ref{tab:construction}: $7.5\%$ at $M{=}800$, $\sigma{=}0.3$
+(vs.\ $57$--$99\%$ for everything else), because success requires all $10$ independent decisions
+to be simultaneously correct, with no mechanism for a confident module to correct a noisy one.
+Replacing this with a genuine recurrent step -- a Hopfield-style softmax relaxation (the same
+mathematical form as Modern Hopfield above, $\beta$ re-tuned to $100$ on this task by the
+identical zero-noise-recovery discipline used throughout this section) over the space of the $M$
+\emph{known valid} codes, so every module's evidence can inform every other module's correction
+-- changes the picture entirely:
+
+\refstepcounter{table}\label{tab:vectorhash-recurrence}
+\noindent\textbf{Table \thetable.} Modular scaffold, independent vs.\ recurrent cleanup ($\sigma{=}0.3$).
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+$M$ & 100 & 200 & 400 & 800 \\
+\midrule
+Independent per-module argmax & 100.0\% & 97.5\% & 54.0\% & 7.5\% \\
+Recurrent attractor correction & 100.0\% & 100.0\% & 98.0\% & 81.0\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{center}
+\includegraphics[width=0.7\linewidth]{figures/vectorhash_oneshot_vs_recurrent.png}
+\end{center}
+\refstepcounter{figure}\label{fig:vectorhash-recurrence}
+\noindent\textbf{Figure \thefigure.} Modular scaffold exact recovery vs.\ $M$ ($\sigma{=}0.3$): independent
+per-module cleanup vs.\ recurrent attractor correction.
+
+\textbf{Where the corrected mechanism lands relative to everything else.} With recurrence, the
+modular scaffold outperforms our own architecture at every $M{\geq}200$ tested, by a wide margin
+at $M{=}800$ ($81.0\%$ vs.\ our $57.5\%$), while still trailing the two sharpest, purpose-built
+methods from Table~\ref{tab:construction}, Modern Hopfield ($99\%$) and dense associative memory
+($96\%$). Also reconciled to this exact $\sigma{=}0.3$ condition, raw-pixel $k$-NN is at
+$100\%$ throughout $M{=}100$--$800$: the ranking is $k\text{-NN}\approx$ Modern Hopfield
+$\approx$ DAM $>$ modular scaffold $>$ ours $\gg$ pseudo-inverse Hopfield $\gg$
+classical/covariance Hopfield/SDM.
+
+\textbf{Does image dimensionality limit capacity here?} Not in the way it limits the other
+methods, but not in the way ``escapes the neuron-count constraint'' would suggest either. The
+mechanism separates two distinct jobs. \emph{Discrimination} -- identifying which of the $M$
+items a cue belongs to -- happens entirely in the abstract code space, whose size ($\prod p_i$)
+is fixed by our choice of moduli and has no dependence on image content at all. \emph{Content
+mapping} -- translating between a code and actual pixels, via the pseudo-inverse encoder --
+depends on image dimensionality exactly as it does for our own $W_{SI}$: fitting $M$ patterns
+requires inverting an $M\times M$ Gram matrix built from the raw images, which becomes
+ill-conditioned once $M$ approaches the images' \emph{effective rank}, not their nominal
+dimension. We verified this directly on the same $M{=}800$ image set: the Gram matrix's
+condition number grows from $3.0\times10^3$ ($M{=}100$) to $2.8\times10^{12}$ ($M{=}800$), and
+the effective rank (99.9\% energy) is only $387$ at $M{=}800$ -- below $M$ itself -- while the
+code space itself ($4.2\times10^{20}$) is nowhere near taxed. The decline from $98.0\%$
+($M{=}400$) to $81.0\%$ ($M{=}800$) is this same content-mapping ceiling reasserting itself, not
+a limitation of the modular addressing idea. The two capacity questions are genuinely separate,
+and modularity solves only the first.
+
+\textbf{Storage and time complexity: a fixed weight matrix vs.\ an explicit, growing list.}
+Table~\ref{tab:complexity} makes the comparison precise. Classical/covariance/pseudo-inverse
+Hopfield compress everything into one $D{\times}D$ weight matrix: storage and per-query time are
+independent of $M$, which is exactly why they hit a hard capacity ceiling -- a fixed-size store
+cannot hold unboundedly many patterns without interference. Modern Hopfield, dense associative
+memory, $k$-NN, and (for its growing engram list) our own architecture instead keep an explicit,
+uncompressed-or-lightly-compressed store that grows linearly with $M$ -- the same complexity
+class, not a more efficient one, which is why none of them shows a hard cliff. The modular
+scaffold sits in this second group for query time (it still scores the cue against all $M$
+known codes), but its \emph{storage} has a genuine structural advantage none of the others share:
+because each code is generated deterministically from its item's index via $m\bmod p_i$, nothing
+needs to be stored beyond the index itself -- $O(M)$ integers, rather than $O(MD)$ raw patterns
+or $O(MH)$ engrams.
+
+\refstepcounter{table}\label{tab:complexity}
+\noindent\textbf{Table \thetable.} Storage and per-query time complexity ($D{=}784$, $H{=}1000$, $L{=}1000$,
+$T{=}$ iteration count).
+\begin{center}
+\scriptsize
+\resizebox{\linewidth}{!}{
+\begin{tabular}{lccc}
+\toprule
+Method & Storage & Per-query time & Training \\
+\midrule
+Classical/covariance/pseudo-inverse Hopfield & $O(D^2)$, fixed & $O(TD^2)$, fixed & $O(MD^2)$ or $O(M^2D{+}M^3)$ \\
+Modern Hopfield / dense assoc.\ memory & $O(MD)$, grows & $O(TMD)$, grows & $O(1)$ \\
+Sparse distributed memory & $O(LD)$, fixed & $O(LD)$, fixed & $O(MLD)$ \\
+$k$-NN & $O(MD)$, grows & $O(MD)$, grows, no iteration & $O(1)$ \\
+Ours & fixed $W_{SH}$, $W_{SI}$/$W_{IS}$ $+$ $O(MH)$ growing & $O(TMH)$, grows & $O(M^2D{+}M^3)$ \\
+Vector-HaSH-style modular scaffold & $O(M)$ indices (codes regenerated on demand) & $O(TM{\cdot}\sum p_i)$, grows & $O(M^2D{+}M^3)$ \\
+\bottomrule
+\end{tabular}
+}
+\end{center}
+
+The honest summary: neither our architecture nor the modular scaffold escapes the $O(M)$
+query-time growth that motivated this whole comparison -- both still compare a cue against every
+stored item, exactly as $k$-NN, Modern Hopfield, and dense associative memory do. What
+Vector-HaSH's actual mechanism contributes beyond our flat scaffold is a smaller, structurally
+guaranteed storage constant, and a discrimination capacity that is provably decoupled from
+content dimensionality -- not a different complexity class for the content-mapping problem, which
+remains bounded by the same effective-rank ceiling for every method that must fit a linear map to
+real images.
+
 \section{Discussion}
 
 Three results compose into a single picture. The combinatorial engram code is robust across
@@ -1115,7 +1448,57 @@ models (bit-flip vs.\ Gaussian) have been replaced with a single shared model
 (Section~\ref{sec:hop}), which revealed a more precise finding than the original qualitative
 one: at fixed, small $M$ our network and the pseudo-inverse baseline are statistically
 comparable in noise tolerance -- the real advantage is capacity scaling, not noise robustness
-per se.
+per se. That advantage, however, does not generalize to the broader associative-memory
+literature: extending the comparison to Modern Hopfield networks and dense associative memory
+(Section~\ref{sec:modern-comparison}), both given properly re-validated separation sharpness
+rather than naively carried-over defaults, shows both substantially outperform our raw
+recovery accuracy at high $M$ under matched noise ($99.0\%$ and $96.0\%$ vs.\ our $57.5\%$ at
+$M{=}800$, $\sigma{=}0.3$), a gap that a $3\times$ larger engram narrows by about half but does
+not close. We report this as a genuine limitation, not a caveat to explain away: this
+architecture's case cannot rest on being the best available image-associative memory. It rests
+instead on a structural property neither alternative has -- the key (a sparse engram drawn from
+an astronomically large combinatorial space, decoupled from the content's own representation)
+is entirely separate from the value (arbitrary content, here images, but Section~
+\ref{sec:generalization} shows three unrelated content types share the identical key
+infrastructure, which simultaneously performs the Sudoku-legality task of Sections 2--3). Where
+the two kinds of claim actually overlap -- recovery at low-to-moderate noise -- our architecture
+already matches both purpose-built alternatives.
+
+\textbf{Two kinds of error correction.} Every alternative memory tested in
+Sections~\ref{sec:hop}--\ref{sec:modern-comparison} corrects errors by an abstract mathematical
+procedure: classical/covariance/pseudo-inverse Hopfield and dense associative memory descend an
+energy function via synchronous sign updates; Modern Hopfield iterates a softmax fixed-point
+map; a symbolic Sudoku solver would backtrack over candidate assignments. None of these is a
+physical process -- each requires a global objective (an energy, a normalized similarity
+distribution, a search tree) that the update rule has privileged access to. Sections~
+\ref{sec:sync}--\ref{sec:emergent} of this paper test a genuinely different kind of mechanism
+for the same job: a network of leaky-integrate-and-fire neurons, coupled only through local
+excitatory/inhibitory synapses with no encoded objective function at all, whose relaxation to a
+phase-synchronized steady state realizes the identical legality-checking computation --
+verified statistically indistinguishable from the hard-coded rule it replaces
+(Table~\ref{tab:wilcoxon}). This is not a claim we extend to the image-heteroassociation
+comparison above, where the cleanup step is the symbolic conflict-mask, not the spiking network
+(Section~\ref{sec:modern-comparison} notes this explicitly) -- but it is a validated property of
+this same architecture's core task, and one none of the six alternative memories in
+Sections~\ref{sec:hop}--\ref{sec:modern-comparison} attempt in any form.
+
+\textbf{The scaffold, not just the learning rule, is a free choice.} Section~
+\ref{sec:vectorhash-scaffold} tests Vector-HaSH's actual modular addressing mechanism, not just
+the heteroassociation rule borrowed from it, and finds it beats our own flat scaffold once given
+a genuinely recurrent (not independent) cleanup step -- an instructive result against our own
+architecture, obtained by taking a cited comparison seriously enough to build rather than only
+invoke. A complexity analysis sharpens what this actually buys: neither the modular scaffold nor
+our own engram escapes $O(M)$ query-time growth, the same class $k$-NN and the sharp associative
+memories of Section~\ref{sec:modern-comparison} already occupy -- the real, structural advantage
+modularity contributes is a discrimination capacity provably decoupled from content
+dimensionality, plus an $O(M)$-index storage cost rather than an $O(MD)$ or $O(MH)$ one. Content
+fidelity itself remains bounded by the same image effective-rank ceiling as everything else.
+We view this as strengthening, not undercutting, the honest accounting in Section~
+\ref{sec:modern-comparison}: this architecture's case was never that it is the most efficient or
+most accurate available memory, but that its specific combination of properties -- a fixed key
+infrastructure serving arbitrary content, a combinatorially large native address space, and (on
+its original task) a physically-realizable dynamical error-correction mechanism -- is not
+available from any single alternative tested.
 
 \section{Methods}
 
@@ -1160,6 +1543,25 @@ consumed directly by our network and bipolarized (thresholded at $0.5$) for the 
 Hopfield variants, at $n{=}200$/point with Wilson 95\% CIs; an earlier bit-flip-vs-Gaussian
 mismatched version is reported separately in the text as a mechanism illustration only.
 
+Modern Hopfield/SDM/DAM comparison (Section~\ref{sec:modern-comparison}): Modern Hopfield
+patterns are $L_2$-normalized (both stored patterns and the query) before the softmax update
+$\xi\leftarrow X^\top\mathrm{softmax}(\beta X\xi)$, iterated to a fixed point ($\max20$
+iterations, $\beta{=}60$); success is nearest-stored-pattern correctness by Euclidean distance,
+not exact numerical equality, since a converged continuous state need not match bit-for-bit.
+Dense associative memory uses the synchronous update $s\leftarrow\mathrm{sign}(\sum_\mu n\cdot
+\mathrm{ReLU}(s\cdot x_\mu/d)^{n-1}x_\mu)$, $n{=}60$, iterated to convergence (max $30$
+iterations). Sparse distributed memory uses $L{=}1000$ random bipolar hard locations and a
+Hamming radius chosen so a pair of independent random bipolar vectors of the stored dimension
+($d{=}784$) falls within it with probability $0.02$ (via the binomial quantile function);
+writing accumulates the full stored pattern into every hard location within radius, reading
+sums the counters of every activated hard location and thresholds by sign. All three methods'
+sharpening parameters ($\beta$, $n$, and SDM's target activation fraction) were validated by
+checking zero-noise self-recovery across the full $M{=}100$--$800$ sweep before any
+noise-robustness number was computed (Section~\ref{sec:modern-comparison}); naive carryovers
+from other contexts in this paper ($\beta{=}0.5$, $n{=}8$) fail this check almost completely.
+The $H$-scaling test (Table~\ref{tab:H-scaling-comparison}) reuses the identical pipeline as
+Section~\ref{sec:capacity-hetero} with $H$ varied and $K{=}0.15H$ held fixed throughout.
+
 \section*{Appendix: $M$, $K$, $H$ by Figure}
 \label{sec:appendix-mkh}
 
@@ -1172,7 +1574,7 @@ directly from each figure's generating script rather than reconstructed from mem
 \refstepcounter{table}\label{tab:appendix-mkh}
 \noindent\textbf{Table \thetable.} $M$, $K$, $H$ for every figure in this paper.
 \begin{center}
-\footnotesize
+\scriptsize
 \begin{tabular}{clccc}
 \toprule
 Fig. & Generating script & $M$ & $K$ & $H$ \\
@@ -1192,6 +1594,10 @@ Fig. & Generating script & $M$ & $K$ & $H$ \\
 \ref{fig:digit-best-worst} & \texttt{heteroassoc\_digit\_classifier\_best\_worst.py} & see note & 150 & 1000 \\
 \ref{fig:capacity-consolidation} & \texttt{heteroassoc\_final\_consolidation.py} & see note & 150 & 1000 \\
 \ref{fig:hopfield} & \texttt{hopfield\_matched\_noise\_rigorous.py} & see note & 150 & 1000 \\
+\ref{fig:modern-comparison} & \texttt{hopfield\_modern\_sdm\_dam\_comparison.py} & see note & 150 & 1000 \\
+\ref{fig:modern-comparison-highM} & \texttt{hopfield\_comparison\_followup\_H\_and\_highM\_noise.py} & see note & 150 & 1000 \\
+\ref{fig:H-scaling-comparison} & \texttt{hopfield\_comparison\_followup\_H\_and\_highM\_noise.py} & 800 & see note & see note \\
+\ref{fig:vectorhash-recurrence} & \texttt{final\_hetero\_comparison\_plot.py} (see note) & $100$--$800$ (swept, $x$-axis) & n/a & n/a \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -1217,7 +1623,21 @@ top-right/bottom-left (capacity cliff and Gram-matrix conditioning) panels use $
 $M{\in}\{200,300,400,500,650,800\}$ respectively, and its bottom-right (ridge sensitivity)
 panel fixes $M{=}500$; Figure~\ref{fig:hopfield}'s left panel ($M$-sweep) uses
 $M{\in}\{100,200,400,800\}$ at fixed $\sigma{=}0.3$, and its right panel (noise-sweep) fixes
-$M{=}50$.
+$M{=}50$. Figure~\ref{fig:modern-comparison} follows the identical $M$/$\sigma$ grid as
+Figure~\ref{fig:hopfield} (left panel $M{\in}\{100,200,400,800\}$ at $\sigma{=}0.3$; right panel
+$M{=}50$ noise-sweep), extended to three further methods (Modern Hopfield, sparse distributed
+memory, dense associative memory) that store the full $784$-dimensional image directly rather
+than an $H$/$K$-parameterized engram, so $K$/$H$ apply only to the ``ours'' curve in each panel.
+Figure~\ref{fig:modern-comparison-highM} repeats the same right-panel noise-sweep at
+$M{=}50$ (left) and $M{=}800$ (right), for the same seven methods. Figure~\ref{fig:H-scaling-comparison}
+sweeps $H{\in}\{1000,1500,2000,3000\}$ ($K{=}0.15H$ throughout) for ``ours'' only, at fixed
+$M{=}800$, $\sigma{=}0.3$; the two dashed reference lines are Modern Hopfield's and dense
+associative memory's $H{=}1000$-comparison values from Figure~\ref{fig:modern-comparison}, not additional swept
+points. Figure~\ref{fig:vectorhash-recurrence} uses a $10$-module modular grid code ($\sum
+p_i{=}1164$ total units, $10$ active per code) in place of an $H$/$K$-parameterized engram, so
+those columns are marked n/a rather than reusing the default $150$/$1000$. Its data is produced
+by \texttt{vectorhash\_modular\_scaffold\_comparison.py} and plotted by
+\texttt{final\_hetero\_comparison\_plot.py}.
 
 \section*{Appendix: Digit Classifier Train/Test Set and Example Classifications}
 \label{sec:appendix-digit-classifier}

@@ -1,0 +1,3 @@
+condition,accuracy
+Sudoku scaffold (real),0.7877777777777778
+Random targets (no scaffold),0.79

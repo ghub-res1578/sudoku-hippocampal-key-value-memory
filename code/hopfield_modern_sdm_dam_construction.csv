@@ -1,0 +1,8 @@
+method,state_units,stored_params,retrieval
+Classical Hopfield,784,784x784 weight matrix,iterative (sign(Ws))
+Covariance-rule Hopfield,784,784x784 weight matrix,iterative (sign(Ws))
+Pseudo-inverse Hopfield,784,784x784 weight matrix,iterative (sign(Ws))
+Modern Hopfield (Ramsauer 2020),784,200x784 pattern matrix (no weight matrix),iterative softmax fixed-point (beta=60.0)
+Sparse Distributed Memory (Kanerva),784,1000 hard locations x 784 + 1000x784 counters,one-shot (radius-thresholded majority sum)
+Dense Assoc. Memory (Krotov-Hopfield),784,200x784 pattern matrix (no weight matrix),iterative rectified-power relaxation (n=60)
+Our network,1000 (engram) + 784 (image),"fixed W_SH: 1000x6561; 200 stored (key,value) pairs: 200x(1000+784)",iterative attention readout + Sudoku-attractor cleanup
