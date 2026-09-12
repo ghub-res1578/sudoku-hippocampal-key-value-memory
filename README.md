@@ -241,7 +241,7 @@ python3 spiking_low_clue_diagnostic_fixedweight.py
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
 
-### Section 4 -- Cross-modal heteroassociation (Tables 7-16, Figs. 10-18; Table 17/Fig. 19 in the Appendix)
+### Section 4 -- Cross-modal heteroassociation (Tables 7-16, Figs. 10-18; Tables 17-18/Fig. 19 in the Appendix)
 
 Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
 `tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
@@ -348,6 +348,12 @@ python3 knn_at_sigma03_matched.py                # k-NN baseline reconciled to t
                                                   #   sigma=0.3, M in {100,200,400,800}
                                                   #   condition used throughout Section 4.7-4.8
                                                   #   (100% at every M tested)
+python3 vectorhash_modular_scaffold_gram_analysis.py  # Section 4.8's condition-number/
+                                                  #   effective-rank numbers (3.0e3->2.8e12,
+                                                  #   rank 387 at M=800) -- these existed only
+                                                  #   as an unsaved ad hoc computation when
+                                                  #   first reported; this script makes them
+                                                  #   reproducible
 python3 final_hetero_comparison_plot.py          # Figure 18: reads the CSVs from the two
                                                   #   scripts above and plots the one-shot-vs-
                                                   #   recurrent ablation (run the two scripts

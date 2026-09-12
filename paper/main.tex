@@ -1309,7 +1309,8 @@ mapping} -- translating between a code and actual pixels, via the pseudo-inverse
 depends on image dimensionality exactly as it does for our own $W_{SI}$: fitting $M$ patterns
 requires inverting an $M\times M$ Gram matrix built from the raw images, which becomes
 ill-conditioned once $M$ approaches the images' \emph{effective rank}, not their nominal
-dimension. We verified this directly on the same $M{=}800$ image set: the Gram matrix's
+dimension. We verified this directly on the same $M{=}800$ image set
+(\texttt{vectorhash\_modular\_scaffold\_gram\_analysis.py}): the Gram matrix's
 condition number grows from $3.0\times10^3$ ($M{=}100$) to $2.8\times10^{12}$ ($M{=}800$), and
 the effective rank (99.9\% energy) is only $387$ at $M{=}800$ -- below $M$ itself -- while the
 code space itself ($4.2\times10^{20}$) is nowhere near taxed. The decline from $98.0\%$
