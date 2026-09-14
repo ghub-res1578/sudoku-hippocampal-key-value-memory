@@ -97,7 +97,7 @@ All commands assume you're in `code/`. Each script prints a summary and writes C
 that a corresponding `_plot`-style call at the bottom of the script (or the script itself)
 turns into the paper's figures. Runtime notes below are on an 8-core desktop CPU.
 
-### Section 3.1 -- Combinatorial code: capacity and robustness (Table 1)
+### Section 3.1 -- Combinatorial code: capacity and robustness (Table 2)
 ```bash
 python3 feedback_vs_M_sweep.py        # M = 50 .. 2000, noise-collapse threshold
 python3 feedback_iterate_highM.py     # M up to 10,000 (needs feedback_iterate_highM_pool.npy,
@@ -106,7 +106,7 @@ python3 feedback_vs_K_sweep.py        # engram size K = 10 .. 500
 python3 feedback_K_finegrain.py       # finer K grid around the interesting region
 python3 feedback_vs_density_sweep.py  # projection density 0.002 .. 1.0
 ```
-Each writes a `*_collapse_thresholds.csv` -- the numbers in Table 1.
+Each writes a `*_collapse_thresholds.csv` -- the numbers in Table 2.
 Runtime: a few minutes each; `feedback_iterate_highM.py` is the slowest (~10 min).
 
 ### Section 3.2 -- The engram code as a similarity-preserving hash (Fig. 1)
@@ -119,12 +119,12 @@ resulting codes. Writes `hash_similarity_preservation.csv` and Figure 1 (Spearma
 $\rho=0.974$ between the two, pooled across $n=390$ corrupted instances). Runtime: under a
 minute.
 
-### Section 3.3 -- Key-value recall: attention vs. regression (Table 2, Fig. 2)
+### Section 3.3 -- Key-value recall: attention vs. regression (Table 3, Fig. 2)
 ```bash
 python3 capacity_regression_vs_attention.py
 ```
 Writes `capacity_regression_vs_attention.csv` (raw) and
-`capacity_regression_vs_attention_capacity_estimates.csv` (Table 2), plus the capacity-curve
+`capacity_regression_vs_attention_capacity_estimates.csv` (Table 3), plus the capacity-curve
 PNG used in Figure 2. Runtime: ~15-20 min (sweeps $M\in\{10,\dots,2000\}$).
 
 ### Section 3.4 -- Separation operators: gap-based vs. ratio-based sharpening (Fig. 3)
@@ -162,7 +162,7 @@ few minutes for each (`hippocampus_drive_readout.py` also runs the capacity/robu
 checks used elsewhere in the paper). `hippocampus_feedback_noise_plot.py` regenerates the
 old single-panel version of Figure 4's left panel alone, if useful for other purposes.
 
-### Section 3.6 -- Partial-grid pattern completion (Table 3, Fig. 5)
+### Section 3.6 -- Partial-grid pattern completion (Table 4, Fig. 5)
 ```bash
 python3 sudoku_partial_grid_completion.py
 ```
@@ -198,9 +198,9 @@ as an honest negative/mixed finding. Runtime: 15-30 min each (200 trials/point f
 flagship configuration); the clean-plot script itself is instant (it only re-fits the
 already-generated CSV).
 
-### Section 3.8 -- Phase synchrony as an emergent conflict mask (Table 4, Fig. 7)
+### Section 3.8 -- Phase synchrony as an emergent conflict mask (Table 5, Fig. 7)
 ```bash
-python3 spiking_multigrid_replication_fixedweight.py   # Table 4 (8-grid replication)
+python3 spiking_multigrid_replication_fixedweight.py   # Table 5 (8-grid replication)
 python3 spiking_real_sudoku_sweetspot.py               # single-grid version, sanity check
 python3 spiking_sync_desync_test.py                    # causal random-assignment test,
                                                         #   isolates the connection-type effect
@@ -213,11 +213,11 @@ Each spiking trial simulates 3000 ms (30 oscillation cycles) and takes roughly 6
 the multigrid replication (8 grids) takes about a minute, the full causal/anti-phase sweeps
 several minutes each.
 
-### Section 3.9 -- Emergent coincidence matrix closes the loop (Tables 5-6, Fig. 8)
+### Section 3.9 -- Emergent coincidence matrix closes the loop (Tables 6-7, Fig. 8)
 ```bash
-python3 spiking_emergent_coincidence.py           # Table 5 + Figure 8 (11 clue fractions x
+python3 spiking_emergent_coincidence.py           # Table 6 + Figure 8 (11 clue fractions x
                                                    #   25 trials -- ~40-60 min)
-python3 spiking_paired_significance_sweep.py      # Table 6: paired Wilcoxon test, dynamics
+python3 spiking_paired_significance_sweep.py      # Table 7: paired Wilcoxon test, dynamics
                                                    #   vs. hard-coded rule (7 clue fractions x
                                                    #   20 trials, ~35-45 min)
 ```
@@ -241,7 +241,7 @@ python3 spiking_low_clue_diagnostic_fixedweight.py
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
 
-### Section 4 -- Cross-modal heteroassociation (Tables 7-16, Figs. 10-18; Tables 17-18/Fig. 19 in the Appendix)
+### Section 4 -- Cross-modal heteroassociation (Tables 8-17, Figs. 10-18; Tables 18-19/Fig. 19 in the Appendix)
 
 Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
 `tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
@@ -256,10 +256,10 @@ python3 heteroassoc_vectorhash_best_examples.py  # Figure 10: largest-rescue-gap
 python3 heteroassoc_W_IH_ridge_corrected.py      # Section 4.1/4.2's single-W_IH, 9-class
                                                   #   digit classifier (ridge=1.0); prints the
                                                   #   78.8%-at-zero-noise headline number
-python3 heteroassoc_digit_classifier_seed_sweep.py       # Table 7, Figure 11: accuracy and
+python3 heteroassoc_digit_classifier_seed_sweep.py       # Table 8, Figure 11: accuracy and
                                                   #   attractor-class concentration across 6
                                                   #   independent (W_SH, class-target) draws
-python3 heteroassoc_digit_classifier_vs_baseline_confusion.py  # Table 8, Figure 12: k-NN
+python3 heteroassoc_digit_classifier_vs_baseline_confusion.py  # Table 9, Figure 12: k-NN
                                                   #   (k=5) and logistic-regression baselines
                                                   #   on the identical split, and the
                                                   #   off-diagonal error-pattern correlation
@@ -277,17 +277,17 @@ python3 heteroassoc_digit_classifier_random_scaffold_ablation.py  # Section 4.2 
                                                   #   classifier has no cleanup/attractor pass
                                                   #   either, unlike Section 4.1's
                                                   #   reconstruction pipeline
-python3 heteroassoc_vectorhash_generalized.py    # Table 9 precursor: dataset/M generalization
-python3 heteroassoc_final_consolidation.py       # Table 9 (rigorous, N=200/point, Wilson CI) +
+python3 heteroassoc_vectorhash_generalized.py    # Table 10 precursor: dataset/M generalization
+python3 heteroassoc_final_consolidation.py       # Table 10 (rigorous, N=200/point, Wilson CI) +
                                                   #   Section 4.4's k-NN baseline/McNemar test +
                                                   #   Section 4.5's capacity/conditioning/ridge
                                                   #   diagnostics -- Figure 13
-python3 heteroassoc_knn_vs_M.py                  # Table 10: does the k-NN gap close as M grows?
+python3 heteroassoc_knn_vs_M.py                  # Table 11: does the k-NN gap close as M grows?
                                                   #   (no -- it widens from +3.5pp at M=200 to
                                                   #   +96.0pp at M=2000), paired McNemar per M
 python3 heteroassoc_ridge_scaling_with_M.py      # does a single ridge value keep working as M
                                                   #   grows? (M up to 2000)
-python3 heteroassoc_ridge_scaling_extended.py    # Table 11: extends the above to M=2500-4000 --
+python3 heteroassoc_ridge_scaling_extended.py    # Table 12: extends the above to M=2500-4000 --
                                                   #   lambda~10 stays near-optimal throughout,
                                                   #   does not need to keep growing
 python3 heteroassoc_H_K_sweep.py                 # does bigger H or K help noise robustness?
@@ -305,14 +305,14 @@ python3 hopfield_vs_our_network_comparison.py    # original bit-flip-vs-Gaussian
                                                   #   Section 4.6 text
 python3 hopfield_pinv_basin_shrinkage.py         # standalone reproduction of that same
                                                   #   illustration (100%/25%/0% exact)
-python3 hopfield_matched_noise_rigorous.py       # Table 12, Figure 14: the headline four-way
+python3 hopfield_matched_noise_rigorous.py       # Table 13, Figure 14: the headline four-way
                                                   #   comparison, redone with N=200/point, Wilson
                                                   #   CIs, and a SINGLE shared noise model (every
                                                   #   method sees the same Gaussian-corrupted
                                                   #   image; the three Hopfield variants get it
                                                   #   bipolarized) -- this is what the paper
                                                   #   reports, not the script above
-python3 hopfield_modern_sdm_dam_comparison.py    # Section 4.7 -- Table 13 (construction),
+python3 hopfield_modern_sdm_dam_comparison.py    # Section 4.7 -- Table 14 (construction),
                                                   #   Figure 15 (M-sweep + M=50 noise-sweep):
                                                   #   extends the comparison to Modern Hopfield
                                                   #   (Ramsauer 2020), sparse distributed memory
@@ -324,14 +324,14 @@ python3 hopfield_modern_sdm_dam_comparison.py    # Section 4.7 -- Table 13 (cons
                                                   #   on this data (naive carryovers from
                                                   #   elsewhere in this paper fail near-totally
                                                   #   even at zero noise)
-python3 hopfield_comparison_followup_H_and_highM_noise.py  # Table 14, Figure 17 (does bigger H
+python3 hopfield_comparison_followup_H_and_highM_noise.py  # Table 15, Figure 17 (does bigger H
                                                   #   close the gap? M=800, sigma=0.3, H swept
                                                   #   1000-3000) and Figure 16 (noise-sweep at
                                                   #   M=800, alongside the existing M=50 sweep,
                                                   #   to show the gap is a genuine high-M
                                                   #   collapse in noise tolerance, not a single
                                                   #   data point)
-python3 vectorhash_modular_scaffold_comparison.py  # Section 4.8 -- Table 15 (one-shot vs.
+python3 vectorhash_modular_scaffold_comparison.py  # Section 4.8 -- Table 16 (one-shot vs.
                                                   #   recurrent cleanup): builds Vector-HaSH's
                                                   #   actual modular addressing mechanism (10
                                                   #   coprime-period modules, CRT-assigned
@@ -359,7 +359,7 @@ python3 final_hetero_comparison_plot.py          # Figure 18: reads the CSVs fro
                                                   #   recurrent ablation (run the two scripts
                                                   #   first)
 ```
-Table 16 (storage/time complexity) is an analytical comparison, not a simulation -- no script
+Table 17 (storage/time complexity) is an analytical comparison, not a simulation -- no script
 to run for it; see Section 4.8 of the paper for the derivation.
 Runtime: most of these build an M-item store from scratch per configuration and are a few
 seconds to low minutes each; `heteroassoc_final_consolidation.py`, `heteroassoc_knn_vs_M.py`,
@@ -392,7 +392,7 @@ which completed in seconds).
 
 ## Statistics
 
-Table 6's significance test is a two-sided Wilcoxon signed-rank test
+Table 7's significance test is a two-sided Wilcoxon signed-rank test
 (`scipy.stats.wilcoxon`) on paired per-trial accuracy differences -- identical target grid
 and known-cell mask used across compared methods within each trial.
 

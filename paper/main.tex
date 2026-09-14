@@ -93,8 +93,18 @@ comparison. A complexity analysis clarifies what this buys: neither scaffold esc
 query-time growth, the same class occupied by $k$-nearest-neighbor and the sharpest associative
 memories tested; the genuine advantage is a discrimination capacity decoupled from content
 dimensionality and an $O(M)$-index storage cost, while content fidelity remains bounded by the
-same image effective-rank ceiling for every method. All code, data, and reproduction
-instructions accompany this paper.
+same image effective-rank ceiling for every method. We also derive an approximate capacity
+bound for our sparse combinatorial code -- exponential in a squared, normalized separation
+margin, the same structural form as modern Hopfield networks' proven exponential capacity --
+from hypergeometric similarity statistics and an extreme-value argument over competing stored
+items, and validate it against the capacity sweep to within 1--5 percentage points, including
+an almost exact match in the low-sparsity regime. This bound formalizes a three-level division
+of labor the architecture as a whole implements: a periodically-driven relational sensor (the
+spiking network), a combinatorial non-dynamical memory (the engram and readout, whose capacity
+the bound describes), and an outer loop coupling the two that converges to a classical discrete
+fixed point -- a different decomposition of sensing and memory than classical or modern
+Hopfield networks, which collapse both into a single fixed-point-seeking dynamical system. All
+code, data, and reproduction instructions accompany this paper.
 \end{abstract}
 
 \section{Introduction}
@@ -142,6 +152,10 @@ work to speak to:
   same key-value memory differing only in the nonlinearity (``separation operator'') applied
   to key-query similarity \cite{gershman2025}. Section~\ref{sec:separation} tests that
   unification directly, swapping our readout's separation operator across all four families.
+  Section~\ref{sec:capacity-theory} derives, for our own sparse combinatorial code, an
+  approximate capacity bound of the same exponential-in-margin form as modern Hopfield
+  networks' proven one \cite{ramsauer2020}, validated against the capacity sweep of
+  Section~3.1.
   \item \textbf{Constraint satisfaction as dynamics.} We ask whether Sudoku's legality
   constraint, which the architecture above uses explicitly as a hard-coded cleanup rule, can
   instead be realized as an emergent property of a spiking network's synchronization
@@ -243,6 +257,95 @@ out of spike-timing coincidence rather than out of any single neuron's firing ra
 instance of the correlation theory of binding-by-synchrony
 \cite{malsburg1981,singer1995}: Sections~\ref{sec:sync}--\ref{sec:emergent} test whether that
 hypothesis, applied to this specific combinatorial relation, actually works.
+
+\subsection{A division of labor between sensing and memory, and a combinatorial capacity bound}
+\label{sec:capacity-theory}
+
+The architecture above decomposes into three functionally distinct levels, worth stating
+explicitly before the results that test each one. (1) The spiking network is a
+\emph{periodically-driven relational sensor}: entrained to a common external rhythm rather than
+settling to a static equilibrium, it faithfully reports which cell pairs currently share a
+digit for whatever candidate assignment currently drives it -- correct or not (Sections~
+\ref{sec:sync}--\ref{sec:emergent}). It does not itself discriminate among stored memories. (2)
+The engram and attention readout are a \emph{combinatorial, non-dynamical memory}: a one-shot
+computation that uses the sensor's report to select among the $M$ stored grids. (3) The
+iterative loop coupling the two (the conflict-mask cleanup of Section~2.1, or the spiking
+version of Sections~\ref{sec:sync}--\ref{sec:emergent})
+is what converges to a corrected, stable output -- a discrete fixed point in the classical
+attractor-network sense, but reached by alternating between a substrate that never itself
+reaches a fixed point (the periodic sensor) and one that has no dynamics at all (the one-shot
+memory lookup). This is a different division of labor than classical or modern Hopfield
+networks, which collapse sensing and memory into a single fixed-point-seeking dynamical
+system (Section~\ref{sec:modern-comparison}).
+
+Level (2)'s capacity is the one this section derives a bound for. Model each of the $M$ stored
+keys as an independent, uniformly random $K$-sparse binary vector in $H$ dimensions (an
+idealization relative to the true $W_{SH}$-projected, mutually-correlated Sudoku keys, addressed
+below). For two independent random $K$-sparse codes, the number of shared active units
+(similarity) follows a hypergeometric distribution with mean $K^2/H$. A query formed by flipping
+a fraction $\eta$ of all $H$ engram bits (this paper's noise model throughout) has, in
+expectation, $K_q(\eta) = K(1-2\eta) + \eta H$ active units, and similarity to its own
+(uncorrupted) true target
+\begin{equation}
+S_{\mathrm{true}}(\eta) = K(1-\eta),
+\end{equation}
+while its similarity to any other, unrelated stored key is a hypergeometric random variable with
+mean and variance
+\begin{equation}
+\mu_{\mathrm{other}}(\eta) = \frac{K_q(\eta)\,K}{H}, \qquad
+\sigma_{\mathrm{other}}^2(\eta) = K_q(\eta)\,\frac{K}{H}\Big(1-\frac{K}{H}\Big)\frac{H-K_q(\eta)}{H-1}.
+\end{equation}
+Retrieval fails when the \emph{largest} of the $M{-}1$ competing similarities exceeds the true
+one -- an extreme-value, not a mean-comparison, criterion. Approximating the competing
+similarities as i.i.d.\ Gaussian (valid for $H\gg1$) and using the standard leading-order
+expectation for the maximum of $n$ i.i.d.\ Gaussians, $\mu+\sigma\sqrt{2\ln n}$, and setting
+$n=M-1$ and $S_{\mathrm{true}}(\eta)$ equal to this expected maximum gives an approximate capacity
+bound
+\begin{equation}
+M_{\max}(\eta) \;\approx\; 1 + \exp\!\left(\frac{z(\eta)^2}{2}\right), \qquad
+z(\eta) = \frac{S_{\mathrm{true}}(\eta) - \mu_{\mathrm{other}}(\eta)}{\sigma_{\mathrm{other}}(\eta)}.
+\end{equation}
+This is, structurally, the same kind of result as the exponential storage capacity of modern
+Hopfield networks \cite{ramsauer2020} -- capacity growing exponentially in a squared,
+normalized separation margin -- derived here for a sparse combinatorial code via hypergeometric
+concentration rather than for dense continuous patterns via their energy-function argument.
+
+\textbf{Validation against Table~\ref{tab:collapse}.} Because $M_{\max}$ is exponential in
+$z^2$, it is extremely sensitive to $\eta$ near the transition -- exactly the sharp,
+narrow-window collapse Table~\ref{tab:collapse} reports, rather than a gradual decline.
+Solving $M_{\max}(\eta)=M$ numerically for the collapse noise level at each tested $M$ and $K$
+(all at $H{=}1000$):
+
+\refstepcounter{table}\label{tab:capacity-theory}
+\noindent\textbf{Table \thetable.} Predicted vs.\ observed collapse threshold (\% engram bits flipped). First
+three columns: $K{=}150$ fixed, $M$ varied. Last two columns: $M{=}1000$ fixed, $K$ varied.
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+ & $M{=}50$ & $M{=}1000$ & $M{=}10{,}000$ & $K{=}10$ & $K{=}150$ \\
+\midrule
+Predicted & 43.9\% & 41.9\% & 40.6\% & 24.5\% & 41.9\% \\
+Observed (Table~\ref{tab:collapse}) & 45\% & 45\% & 40\% & 25\% & 40--45\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The bound reproduces both the near-independence of the collapse threshold from a 200-fold range
+of $M$ and its sharp dependence on $K$, within 1--5 percentage points throughout, including an
+almost exact match at $K{=}10$ (24.5\% predicted vs.\ 25\% observed). The theory is not exact,
+and we do not present it as such: the leading-order Gaussian extreme-value approximation is
+known to be biased for finite $n$ (visible in the $\eta{=}0$, noise-free check against
+Section~\ref{sec:separation}'s independently measured similarity ratios, where it over-predicts
+$3.39$ as $4.21$, though it matches closely at $20\%$ and $30\%$ noise, $1.99$ and $1.47$ against
+measured $1.92$ and $1.45$), and the independence assumption is false by construction -- real
+engram keys are correlated through the shared random projection $W_{SH}$ and through Sudoku's
+own combinatorial structure. The observed thresholds sit consistently at or slightly above the
+predicted ones, plausibly because this real correlation structure makes the worst-case
+competing key marginally less extreme than a fully independent-random-code model assumes; we
+have not tested this explanation directly. What the bound establishes is the right mechanism
+(an exponential-in-margin capacity, hence a sharp rather than gradual collapse, hence an
+approximately $M$-independent threshold over the tested range) and the right order of magnitude,
+not a proof.
 
 \section{Results}
 
@@ -1376,6 +1479,20 @@ more interesting finding: it demonstrates that a biologically-plausible, locally
 dynamical mechanism can substitute for a piece of hard-coded logic without loss, which is a
 different and, we think, more useful claim than a performance improvement would have been.
 
+Section~\ref{sec:capacity-theory} names why these three results compose rather than merely
+coexist: the architecture separates sensing (a periodically-driven substrate that never itself
+reaches equilibrium) from memory (a one-shot combinatorial lookup with no dynamics of its own),
+with error correction emerging only from the loop coupling them. Classical and modern Hopfield
+networks make no such separation -- sensing and memory are the same fixed-point-seeking
+dynamical system, which is precisely why their capacity theorems
+\cite{ramsauer2020} are theorems about that single system's energy landscape. Ours is a
+theorem about the memory half alone, derived independently of the spiking substrate and
+validated against data the spiking substrate had no part in generating (Table~\ref{tab:collapse}).
+That the same combinatorial-memory layer then composes cleanly with a physically-realized
+dynamical sensor, without degrading the statistical parity result of Table~\ref{tab:wilcoxon}, is
+the concrete payoff of keeping the two separate rather than folding them into one dynamical
+system from the start.
+
 Two further results test claims we had, until this paper, only argued for by analogy rather
 than measured directly. First, the encoder itself behaves as a similarity-preserving hash, not
 merely a randomizing sparsifier: engram overlap tracks raw coincidence-matrix similarity almost
@@ -1465,6 +1582,64 @@ infrastructure, which simultaneously performs the Sudoku-legality task of Sectio
 the two kinds of claim actually overlap -- recovery at low-to-moderate noise -- our architecture
 already matches both purpose-built alternatives.
 
+\textbf{Is the $\beta$ comparison itself fair?} Section~\ref{sec:modern-comparison}'s Tuning
+transparency paragraph sets Modern Hopfield's $\beta{=}60$ against our own $\beta{=}1/\tau{=}0.5$
+by validating each separately for zero-noise self-recovery, not by matching the raw numbers --
+but the two readouts are the identical functional form
+($p=\mathrm{softmax}(\beta\cdot\mathrm{sim})$, our $\tau{=}2.0$ giving $\beta{=}0.5$), so it is
+worth asking directly whether a $120\times$ smaller $\beta$ secretly biases the headline gap
+above in Modern Hopfield's favor. Raw $\beta$ is not comparable across models: it multiplies a
+similarity score living on a completely different scale in each case -- Modern Hopfield's is a
+cosine similarity in $[-1,1]$ over correlated raw pixels, ours is an integer engram-overlap count
+in $[0,K{=}150]$ -- so the quantity that actually sets discriminative sharpness, per Ramsauer et
+al.'s own separation theorem, is the product $\beta\cdot\Delta$, where $\Delta$ is the mean gap
+between a query's true-match similarity and its best competitor. We measured $\Delta$ directly
+for both models, at clean queries, across the full $M{=}100$--$4000$ sweep already used for the
+Modern Hopfield cliff test (Section~\ref{sec:modern-comparison}):
+
+\refstepcounter{table}\label{tab:beta-delta}
+\noindent\textbf{Table \thetable.} Effective separation sharpness $\beta\cdot\Delta$, clean queries, $n{=}300$
+sampled queries/point.
+\begin{center}
+\scriptsize
+\begin{tabular}{cccccc}
+\toprule
+$M$ & MH $\Delta$ & MH $\beta\Delta$ & Ours $\Delta$ & Ours $\beta\Delta$ & Ratio (ours/MH) \\
+\midrule
+100  & 0.264 & 15.8 & 106.8 & 53.4 & $3.4\times$ \\
+200  & 0.232 & 13.9 & 105.6 & 52.8 & $3.8\times$ \\
+400  & 0.208 & 12.5 & 101.7 & 50.8 & $4.1\times$ \\
+800  & 0.190 & 11.4 & 78.9  & 39.4 & $3.5\times$ \\
+1200 & 0.176 & 10.6 & 57.9  & 29.0 & $2.7\times$ \\
+1600 & 0.168 & 10.1 & 45.5  & 22.7 & $2.3\times$ \\
+2000 & 0.162 & 9.7  & 35.9  & 18.0 & $1.9\times$ \\
+2500 & 0.168 & 10.1 & 28.6  & 14.3 & $1.4\times$ \\
+3000 & 0.160 & 9.6  & 20.4  & 10.2 & $1.1\times$ \\
+4000 & 0.146 & 8.7  & 13.7  & 6.8  & $0.8\times$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+At the $M{\leq}800$ range where the headline comparison
+(Table~\ref{tab:construction}, Figure~\ref{fig:modern-comparison}) is actually drawn, our
+effective sharpness is $3.4$--$4.1\times$ \emph{larger} than Modern Hopfield's, not smaller -- so
+the reported $57.5\%$ vs.\ $99.0\%$ gap at $M{=}800$, $\sigma{=}0.3$ is, if anything, generous to
+Modern Hopfield, not an artifact of an unfairly weak $\beta$ on our side. But the advantage is
+not stable across $M$: it shrinks monotonically and crosses parity near $M{\approx}3000$, and by
+$M{=}4000$ Modern Hopfield's effective sharpness is slightly the larger of the two ($8.7$ vs.\
+$6.8$). This crossover has a precise mechanistic source, not a tuning artifact. Modern Hopfield's
+$\Delta$ is nearly flat with $M$ ($0.264\to0.146$, less than $2\times$) because cosine similarity
+between raw, $784$-dimensional pixel vectors is governed by concentration of measure and barely
+moves as more images are added; ours collapses more than $7$-fold ($106.8\to13.7$) because it is
+set not by the readout but by the upstream pseudo-inverse encoding step, whose fidelity is capped
+by MNIST's effective rank (${\sim}600$--$610$, Section~\ref{sec:capacity-hetero}) -- once $M$
+approaches and passes that ceiling, every stored engram becomes a slightly worse fit, competitor
+overlaps rise, and $\Delta$ falls. This gives the high-$M$ gap reported in
+Section~\ref{sec:modern-comparison} a specific cause rather than only an empirical description:
+it is the same encoding-stage bottleneck already identified in Section~\ref{sec:capacity-hetero},
+now visible directly in the separation term itself rather than only in downstream accuracy, and
+it is symmetric with -- not an artifact of -- the $\beta$ choice on either side.
+
 \textbf{Two kinds of error correction.} Every alternative memory tested in
 Sections~\ref{sec:hop}--\ref{sec:modern-comparison} corrects errors by an abstract mathematical
 procedure: classical/covariance/pseudo-inverse Hopfield and dense associative memory descend an
@@ -1502,6 +1677,12 @@ its original task) a physically-realizable dynamical error-correction mechanism 
 available from any single alternative tested.
 
 \section{Methods}
+
+Section~\ref{sec:capacity-theory}'s capacity bound (Table~\ref{tab:capacity-theory}) is
+computed by \texttt{capacity\_bound\_derivation.py} -- an analytical calculation, not a
+simulation: exact hypergeometric moments for the two similarity distributions, the standard
+leading-order Gaussian extreme-value approximation for the maximum of $M{-}1$ competitors, and
+a numerical solve of $M_{\max}(\eta)=M$ over a fine grid of $\eta$.
 
 All simulations use Brian2 \cite{brian2}. Spiking network parameters: $\tau_m=40$\,ms,
 $f_{\mathrm{osc}}=10$\,Hz, $V_{\mathrm{th}}=1$, $V_{\mathrm{reset}}=0$, integration timestep
@@ -1562,6 +1743,15 @@ noise-robustness number was computed (Section~\ref{sec:modern-comparison}); naiv
 from other contexts in this paper ($\beta{=}0.5$, $n{=}8$) fail this check almost completely.
 The $H$-scaling test (Table~\ref{tab:H-scaling-comparison}) reuses the identical pipeline as
 Section~\ref{sec:capacity-hetero} with $H$ varied and $K{=}0.15H$ held fixed throughout.
+
+$\beta\cdot\Delta$ fairness check (Table~\ref{tab:beta-delta}): for Modern Hopfield, $\Delta$ is
+the mean, over $300$ sampled stored patterns per $M$, of the true pattern's cosine self-similarity
+(exactly $1.0$ under $L_2$-normalization) minus its highest-similarity competitor among the
+remaining $M{-}1$ stored patterns. For our network, $\Delta$ is the mean, over the same sample
+size, of the true engram's overlap with the query-reconstructed engram ($H_{\mathrm{keys}}\cdot
+h_{\mathrm{query}}$, the same quantity fed to the readout softmax) minus the highest-overlap
+competitor, using clean ($\sigma{=}0$) queries throughout so the measurement isolates
+representational geometry rather than noise-driven distortion.
 
 \section*{Appendix: $M$, $K$, $H$ by Figure}
 \label{sec:appendix-mkh}
