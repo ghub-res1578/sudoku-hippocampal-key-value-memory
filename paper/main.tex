@@ -23,88 +23,50 @@ Satisfaction in a Hippocampal-Inspired Spiking Network}
 \maketitle
 
 \begin{abstract}
-We study a hippocampal-inspired memory architecture in which solved Sudoku grids are stored
-as sparse binary engrams, formed by projecting each grid's $81\times81$ same-digit
-coincidence matrix through a fixed random sparse matrix and taking the top-$K$ active units.
-An attention-based key-value readout retrieves stored digit values with no observed capacity
-ceiling up to $M=2000$ stored items and tolerance to $30\%$ query corruption, in sharp
-contrast to a ridge-regression readout, which collapses to chance performance at $M{\sim}H$
-even without any query noise. Retrieval degrades gracefully, not catastrophically, under
-heavier query corruption too: accuracy holds to $35\%$ of engram bits flipped and then
-declines over a narrow window whose rescue by conflict-mask cleanup peaks sharply at $42\%$
-noise. Partial-grid cues drive an iterative attractor that recovers missing digits with
-graceful, clue-count-dependent accuracy. We then ask whether the
-symbolic legality check that this architecture relies on for error correction --
-Sudoku's row/column/box constraint -- can instead emerge from neural dynamics rather than
-being hard-coded. We build a leaky-integrate-and-fire spiking network whose only structural
-knowledge of Sudoku is which cell-pairs are \emph{forbidden} from sharing a digit
-(realized as inhibitory coupling) and which are not (realized as weak excitatory coupling).
-Driven by per-cell currents encoding candidate digit identities, the network's steady-state
-spike timing reproduces the coincidence matrix without any digit ever being decoded from a
-single neuron's activity: same-digit cells synchronize to within $0.2$\,ms while
-differently-digited cells separate by ${\sim}13$\,ms, consistently across eight independently
-sampled grids. Reading out this emergent, synchrony-based coincidence matrix and feeding it
-through the \emph{same} associative engram pipeline used for storage yields completion
-accuracy that is statistically indistinguishable (Wilcoxon signed-rank, $p>0.05$ at every
-tested clue fraction, paired $n=20$) from the original hard-coded conflict mask, while
-substantially exceeding the accuracy of the raw single-shot associative guess it starts
-from. This dynamical mechanism is itself robust to noise: corrupting known cells' drive
-currents with Gaussian jitter degrades completion accuracy smoothly, remaining above the
-noise-free associative baseline even at current noise more than twice the spacing between
-adjacent digit levels. We also characterize a reproducible power-law crossover in attractor
-relaxation time
-near the completion threshold, and report -- rather than paper over -- that its exponent is
-not universal across stored-set sizes, tempering any claim to a shared critical-phenomena
-universality class. Finally, we extend the engram layer to a second modality -- natural
-images, heteroassociated to Sudoku engrams via the same bidirectional pseudo-inverse rule
-used by Vector-HaSH \cite{chandra2025} -- and benchmark it against classical Hopfield networks.
-The comparison is double-edged: a paired nearest-neighbor baseline beats our pipeline at every
-tested stored-set size, and the gap widens rather than closes as that size grows ($+3.5$ to
-$+96.0$ percentage points from $M{=}200$ to $M{=}2000$), an honest limitation we report rather
-than omit; but on the specific property Vector-HaSH is designed to provide, our architecture
-succeeds where classical and even pseudo-inverse-trained Hopfield networks -- the latter using
-the identical learning rule we do, and statistically tied with ours in noise tolerance at fixed
-storage size -- collapse to zero recovery an order of magnitude sooner in storage capacity,
-isolating the separate error-correcting attractor, not the learning rule, as the source of the
-graceful degradation. This capacity-scaling advantage does not, however, extend to the broader
-associative-memory literature: benchmarked further against Modern Hopfield networks and dense
-associative memory, given properly re-validated (not naively carried-over) separation
-sharpness, both substantially outperform our raw recovery accuracy at high storage load under
-matched noise ($99.0\%$ and $96.0\%$ vs.\ our $57.5\%$ at $M{=}800$), a gap a $3\times$ larger
-engram narrows by about half but does not close -- an honest limitation we report because the
-architecture's case rests elsewhere: unlike every alternative tested, whose stored
-representation \emph{is} the content itself, our key (a sparse engram drawn from an
-astronomically large combinatorial space) is entirely decoupled from the value it is bound to,
-letting one fixed key infrastructure serve arbitrary content \emph{and} the original
-Sudoku-legality task at once, while still matching these purpose-built alternatives at
-low-to-moderate noise. A separation-operator ablation -- swapping the readout's softmax
-nonlinearity for five alternatives spanning the correlation-matrix-memory, sparse-distributed-memory,
-and dense-associative-memory literatures -- shows that noise robustness tracks whether an
-operator sharpens by an absolute similarity gap or a similarity ratio, not merely how
-aggressively it discriminates: ratio-based sharpening collapses at roughly half the noise level
-gap-based sharpening tolerates, given matched zero-noise selectivity. We also verify directly,
-rather than assume by analogy to sparse random-projection hashing circuits, that the encoder
-preserves relative similarity between inputs (Spearman $\rho=0.97$ between raw coincidence-matrix
-similarity and engram overlap across the full corruption range). We additionally build Vector-HaSH's
-actual modular addressing mechanism, not just its heteroassociation rule, and find it beats our
-own flat scaffold once given a genuinely recurrent (not independent) cross-module correction step
--- a result against our own architecture, obtained by testing rather than only citing a
-comparison. A complexity analysis clarifies what this buys: neither scaffold escapes $O(M)$
-query-time growth, the same class occupied by $k$-nearest-neighbor and the sharpest associative
-memories tested; the genuine advantage is a discrimination capacity decoupled from content
-dimensionality and an $O(M)$-index storage cost, while content fidelity remains bounded by the
-same image effective-rank ceiling for every method. We also derive an approximate capacity
-bound for our sparse combinatorial code -- exponential in a squared, normalized separation
-margin, the same structural form as modern Hopfield networks' proven exponential capacity --
-from hypergeometric similarity statistics and an extreme-value argument over competing stored
-items, and validate it against the capacity sweep to within 1--5 percentage points, including
-an almost exact match in the low-sparsity regime. This bound formalizes a three-level division
-of labor the architecture as a whole implements: a periodically-driven relational sensor (the
-spiking network), a combinatorial non-dynamical memory (the engram and readout, whose capacity
-the bound describes), and an outer loop coupling the two that converges to a classical discrete
-fixed point -- a different decomposition of sensing and memory than classical or modern
-Hopfield networks, which collapse both into a single fixed-point-seeking dynamical system. All
-code, data, and reproduction instructions accompany this paper.
+We study a hippocampal-inspired memory architecture that stores solved Sudoku grids as sparse
+binary engrams -- fixed random projections of each grid's relational (same-digit) structure --
+and retrieves them through an attention-based key-value readout. The readout shows no observed
+capacity ceiling to $M{=}2000$ stored items where a regression-based alternative collapses
+catastrophically at $M{\sim}H$, and degrades gracefully rather than catastrophically under
+query corruption or partial cues. We derive an approximate capacity bound for this sparse
+combinatorial code -- exponential in a squared separation margin, the same structural form as
+modern Hopfield networks' proven bound -- from hypergeometric similarity statistics and an
+extreme-value argument, validated against simulation to within a few percentage points. This
+motivates a three-level division of labor the architecture implements: a periodically-driven
+relational sensor, a non-dynamical combinatorial memory (whose capacity the bound describes),
+and an outer loop converging to a discrete fixed point -- structurally different from classical
+or modern Hopfield networks, which collapse sensing and memory into one system. A
+separation-operator ablation, spanning correlation-matrix memory, sparse distributed memory,
+dense associative memory, and Transformer-style attention, shows retrieval robustness tracks
+whether an operator sharpens by an absolute gap or a similarity ratio, not sharpness alone; we
+also verify directly that the encoder behaves as a similarity-preserving hash (Spearman
+$\rho{=}0.97$), a property assumed by analogy elsewhere in this literature.
+
+We then ask whether Sudoku's row/column/box legality constraint, used throughout as a
+hard-coded cleanup rule, can instead emerge from spiking dynamics rather than being
+hard-coded. A leaky-integrate-and-fire network whose only structural knowledge is which cells
+must differ reproduces the same-digit relational structure through phase synchrony alone --
+same-digit cells lock to within $0.2$\,ms, others separate by ${\sim}13$\,ms -- and, fed back
+through the identical associative pipeline, is statistically indistinguishable from the
+hard-coded rule it replaces (Wilcoxon $p{>}0.05$ at every tested clue fraction), while
+remaining robust to substantial drive-current noise.
+
+Finally, we extend the engram to a second modality (natural images) and benchmark it
+extensively, and honestly, against the associative-memory literature. Classical, covariance,
+and several further Hopfield variants -- including four specified in Vector-HaSH's own
+comparison \cite{chandra2025} -- collapse to near-zero recovery on real correlated images;
+$k$-nearest-neighbor and sharply-separating methods (Modern Hopfield, dense associative
+memory) do not, and substantially outperform our raw accuracy at scale ($M{\geq}800$). We
+quantify this gap directly rather than infer it: our own readout, isolated from its cleanup
+loop, has a hidden memory cliff of the same kind as classical Hopfield's, and the cleanup loop
+-- not the readout -- is responsible for masking it. A faithfully-built Vector-HaSH-style
+modular scaffold, given a genuinely recurrent rather than independent correction step, beats
+our own architecture at $M{\geq}200$, though the advantage narrows by $M{=}4000$. The
+architecture's case rests on a structural property none of these alternatives share: a fixed
+key, drawn from an astronomically large combinatorial space and fully decoupled from content,
+that serves arbitrary modalities while simultaneously solving the original Sudoku-legality
+task -- matching every purpose-built alternative at low-to-moderate noise and storage load.
+All code, data, and reproduction instructions accompany this paper.
 \end{abstract}
 
 \section{Introduction}
@@ -1349,6 +1311,79 @@ this paper to be statistically indistinguishable on the core Sudoku-completion t
 image-heteroassociation pipeline specifically, and this comparison should not be read as a test
 of the spiking mechanism.
 
+\subsection{Does our own readout have a hidden cliff?}
+\label{sec:own-cliff}
+
+Section~\ref{sec:hop} isolated the source of our capacity advantage over pseudo-inverse
+Hopfield as the separate error-correcting attractor, not the shared learning rule -- an
+inference from comparing two different systems. Here we test it directly on one system: we
+isolate our own attention readout ($p=\mathrm{softmax}(\mathrm{sim}/\tau)$, $\tau{=}2.0$) with
+the iterative Sudoku-legality cleanup loop switched off entirely (image $\to W_{SI}\to$
+$k$-WTA $\to$ one readout call $\to$ decode, nothing else), across the identical extended
+$M{=}100$--$4000$ grid used throughout this section.
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/ours_single_shot_readout_cliff_test.png}
+\end{center}
+\refstepcounter{figure}\label{fig:own-cliff}
+\noindent\textbf{Figure \thefigure.} Left: single-shot readout accuracy vs.\ $M$, clean ($\sigma{=}0$) and
+corrupted ($\sigma{=}0.3$) queries, against the full pipeline (with cleanup) at the same
+$\sigma{=}0.3$. Right: does sharpening $\beta{=}1/\tau$ rescue single-shot recovery at
+$M{=}2000$/$4000$?
+
+At $\sigma{=}0$ the single-shot readout alone degrades gracefully, as Table~\ref{tab:readout}
+already showed for the pure-Sudoku engram: still $60.5\%$ at $M{=}4000$. But at $\sigma{=}0.3$ it
+has its own sharp cliff, of the same qualitative kind as classical Hopfield's, just at a larger
+$M$: $88.5\%$ ($M{=}400$) $\to$ $35.0\%$ ($M{=}800$) $\to$ $18.0\%$ ($M{=}1200$) $\to$ single
+digits by $M{=}2000$. The cleanup loop's contribution, measured directly rather than inferred, is
+largest exactly where the single-shot readout is steepening ($+22.5$ percentage points at
+$M{=}800$: $57.5\%$ vs.\ $35.0\%$) and small where the readout is either still easy or already
+past saving ($+0.5$pp at $M{=}4000$) -- the same ``rescue concentrates in the transition
+region'' pattern already documented for query noise (Figure~\ref{fig:feedback-noise}). A
+beta-rescue check (Figure~\ref{fig:own-cliff}, right) rules out the simplest fix: sharpening
+$\beta$ by $40\times$ (matching the scale Modern Hopfield itself needed) recovers only a few
+percentage points ($4\%\to10\%$ at $M{=}2000$; $1.5\%\to4\%$ at $M{=}4000$), nowhere near
+Modern Hopfield's or dense associative memory's numbers at the same $M$. The bottleneck here is
+not separation sharpness but the same image effective-rank ceiling diagnosed in
+Section~\ref{sec:capacity-hetero} for the encoder $W_{SI}$ itself; no readout-side fix reaches
+past it. This result sharpens rather than contradicts Table~\ref{tab:readout}'s ``no observed
+ceiling'': that claim is about the Sudoku-engram, bit-flip-noise setting specifically (Section~
+\ref{sec:attn-vs-reg}), and does not transfer to a readout whose keys are produced by a
+pseudo-inverse map from correlated real images -- a scope boundary this section makes explicit
+rather than leaves implicit.
+
+\subsection{Vector-HaSH's own baseline comparison}
+\label{sec:vectorhash-own-baselines}
+
+Section~\ref{sec:hop} and Section~\ref{sec:modern-comparison} together cover six associative
+memories, but Vector-HaSH's own comparison (Chandra, Sharma, Chaudhuri \& Fiete, Nature 2025,
+Figure 3d) tests four further ones we had not yet built: bounded-synapse (palimpsest) Hopfield
+-- sequential Hebbian learning with each synapse clipped after every update, following the
+Fusi--Abbott bounded-weight model, clip bound $5/N$ (chosen so a synapse saturates after
+${\sim}5$ coherently-reinforcing contributions; Vector-HaSH's own Methods does not state a
+specific bound) -- the Tsodyks--Feigelman sparse-input learning rule for low-activity patterns,
+a diluted-connectivity Hopfield variant ($\kappa{=}0.5$), and a tail-biting autoencoder. We built
+all four exactly as specified in that paper's Methods and tested them, at $\sigma{=}0.3$, on
+both random bipolar patterns (their native, designed-for regime) and real MNIST images.
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/vectorhash_own_baselines_comparison.png}
+\end{center}
+\refstepcounter{figure}\label{fig:vectorhash-own-baselines}
+\noindent\textbf{Figure \thefigure.} Vector-HaSH's own four additional baselines, exact recovery vs.\ $M$:
+random bipolar patterns (left) vs.\ real MNIST (right), $\sigma{=}0.3$.
+
+On random patterns, sparse-input Hopfield and the tail-biting autoencoder both recover well at
+low $M$ before collapsing by $M{=}400$; bounded-synapse Hopfield is already weak by $M{=}200$;
+diluted Hopfield is near-floor throughout. On real MNIST, the pattern seen for classical and
+covariance-rule Hopfield (Section~\ref{sec:hop}) and sparse distributed memory (Section~
+\ref{sec:modern-comparison}) repeats exactly: bounded-synapse, sparse-input, and diluted
+Hopfield are indistinguishable from chance at every tested $M$, and the tail-biting autoencoder,
+though not exactly zero, declines from a modest $17.0\%$ ($M{=}100$) to $3.5\%$ ($M{=}800$) --
+joining rather than escaping the floor. This extends the count of classical-style associative
+memories that fail completely on real correlated images from three to six, using precisely the
+comparison set Vector-HaSH's own paper specifies rather than a set we selected ourselves.
+
 \subsection{A modular, Vector-HaSH-style scaffold: does the actual addressing mechanism help?}
 \label{sec:vectorhash-scaffold}
 
@@ -1464,6 +1499,39 @@ guaranteed storage constant, and a discrimination capacity that is provably deco
 content dimensionality -- not a different complexity class for the content-mapping problem, which
 remains bounded by the same effective-rank ceiling for every method that must fit a linear map to
 real images.
+
+\subsection{Extending every comparison to $M{=}4000$}
+\label{sec:extended-4000}
+
+Every result above compares a subset of methods on its own $M$-grid, generated at different
+times. As a final consistency and range check, we reran all ten methods --
+classical/covariance/pseudo-inverse Hopfield, Modern Hopfield, sparse distributed memory, dense
+associative memory, $k$-NN, our network, and the Vector-HaSH-style modular scaffold (one-shot and
+recurrent) -- on one identical, fully paired protocol (every method sees the same noisy query on
+a given trial) spanning $M{=}100$--$4000$, $\sigma{=}0.3$.
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/full_memory_vs_accuracy_consolidated.png}
+\end{center}
+\refstepcounter{figure}\label{fig:full-consolidated}
+\noindent\textbf{Figure \thefigure.} Exact recovery vs.\ $M$, all ten methods, fully paired
+trials ($\sigma{=}0.3$).
+
+This confirms every number already reported at $M{\leq}800$ (Table~\ref{tab:hopfield},
+Figure~\ref{fig:modern-comparison}, and Table~\ref{tab:vectorhash-recurrence}) under a single
+shared protocol, and extends the picture in one direction not yet shown: Modern Hopfield and dense
+associative memory remain remarkably robust all the way to $M{=}4000$ ($95.0\%$ and $91.0\%$),
+essentially unmoved from their $M{=}800$ values, while both our own pipeline and the Vector-HaSH
+recurrent scaffold continue to decline well past $M{=}800$ -- our pipeline to $2.0\%$ and the
+modular scaffold to $8.5\%$ by $M{=}4000$. The Vector-HaSH scaffold's advantage over our own
+architecture, real and substantial at $M{=}800$--$2000$ (Section~\ref{sec:vectorhash-scaffold}),
+narrows considerably at this extended range without our pipeline ever catching up: it remains
+ahead throughout ($8.5$--$10\%$ vs.\ $2$--$3\%$ from $M{=}2500$ to $4000$), but the gap is no
+longer the order-of-magnitude difference seen at $M{=}800$. $k$-NN alone shows no decline
+whatsoever across the entire tested range ($100\%$ at every $M$ from $100$ to $4000$),
+underscoring the earlier point (Section~\ref{sec:knn-baseline}) that raw exemplar retrieval, not
+compressed associative memory of any kind tested here, remains the accuracy ceiling for this
+specific task.
 
 \section{Discussion}
 

@@ -241,7 +241,7 @@ python3 spiking_low_clue_diagnostic_fixedweight.py
 Measures emergent-$\hat C$ activity, engram overlap, and attention mass/rank on the true
 target vs.\ an oracle, at three clue fractions. Runtime: a few minutes.
 
-### Section 4 -- Cross-modal heteroassociation (Tables 8-17, Figs. 10-18; Tables 18-19/Fig. 19 in the Appendix)
+### Section 4 -- Cross-modal heteroassociation (Tables 8-17, Figs. 10-21; Tables 18-19/Fig. 22 in the Appendix)
 
 Requires `tensorflow` (used only to load MNIST/Fashion-MNIST/CIFAR-100 via
 `tf.keras.datasets`; downloads to `~/.keras/datasets/` on first use, then cached).
@@ -265,7 +265,7 @@ python3 heteroassoc_digit_classifier_vs_baseline_confusion.py  # Table 9, Figure
                                                   #   off-diagonal error-pattern correlation
                                                   #   test (r=0.71/0.68 vs. ours, 0.55 between
                                                   #   the two baselines)
-python3 heteroassoc_digit_classifier_best_worst.py       # Appendix Figure 19: one best and
+python3 heteroassoc_digit_classifier_best_worst.py       # Appendix Figure 22: one best and
                                                   #   one worst held-out classification per
                                                   #   digit class, zero noise
 python3 heteroassoc_digit_classifier_random_scaffold_ablation.py  # Section 4.2 caveat: swaps
@@ -331,7 +331,36 @@ python3 hopfield_comparison_followup_H_and_highM_noise.py  # Table 15, Figure 17
                                                   #   to show the gap is a genuine high-M
                                                   #   collapse in noise tolerance, not a single
                                                   #   data point)
-python3 vectorhash_modular_scaffold_comparison.py  # Section 4.8 -- Table 16 (one-shot vs.
+python3 beta_delta_fairness_full_M_sweep.py      # Table 18: is the raw beta=60 (Modern
+                                                  #   Hopfield) vs. beta=0.5 (ours) comparison
+                                                  #   fair, given the two similarity scores live
+                                                  #   on different ranges? Measures beta*Delta
+                                                  #   (Delta = true-match minus best-competitor
+                                                  #   similarity, clean queries) for both models
+                                                  #   across the full M=100-4000 grid
+python3 ours_single_shot_readout_cliff_test.py   # Section 4.8, Figure 18: isolates our own
+                                                  #   attention readout with NO iterative
+                                                  #   cleanup loop -- reveals a hidden memory
+                                                  #   cliff (88.5% at M=400 -> 35.0% at M=800 ->
+                                                  #   single digits by M=2000, sigma=0.3) of the
+                                                  #   same kind as classical Hopfield's, masked
+                                                  #   by the cleanup loop in every other result in
+                                                  #   this section; also tests whether sharpening
+                                                  #   beta rescues it (it does not, plateauing far
+                                                  #   below Modern Hopfield/DAM)
+python3 vectorhash_own_baselines_comparison.py   # Section 4.9, Figure 19: the four remaining
+                                                  #   baselines from Vector-HaSH's own Fig. 3d
+                                                  #   comparison (Chandra, Sharma, Chaudhuri &
+                                                  #   Fiete, Nature 2025) not yet built elsewhere
+                                                  #   in this project -- bounded-synapse/
+                                                  #   palimpsest Hopfield, Tsodyks-Feigelman
+                                                  #   sparse-input Hopfield, diluted-connectivity
+                                                  #   Hopfield, and a tail-biting autoencoder --
+                                                  #   tested on random patterns (native regime)
+                                                  #   and real MNIST (all fail on real images,
+                                                  #   extending the classical-memory-fails count
+                                                  #   from three to six)
+python3 vectorhash_modular_scaffold_comparison.py  # Section 4.10 -- Table 16 (one-shot vs.
                                                   #   recurrent cleanup): builds Vector-HaSH's
                                                   #   actual modular addressing mechanism (10
                                                   #   coprime-period modules, CRT-assigned
@@ -346,21 +375,31 @@ python3 vectorhash_modular_scaffold_comparison.py  # Section 4.8 -- Table 16 (on
                                                   #   hopfield_modern_sdm_dam_comparison.py
 python3 knn_at_sigma03_matched.py                # k-NN baseline reconciled to the exact
                                                   #   sigma=0.3, M in {100,200,400,800}
-                                                  #   condition used throughout Section 4.7-4.8
+                                                  #   condition used throughout Section 4.7/4.10
                                                   #   (100% at every M tested)
-python3 vectorhash_modular_scaffold_gram_analysis.py  # Section 4.8's condition-number/
+python3 vectorhash_modular_scaffold_gram_analysis.py  # Section 4.10's condition-number/
                                                   #   effective-rank numbers (3.0e3->2.8e12,
                                                   #   rank 387 at M=800) -- these existed only
                                                   #   as an unsaved ad hoc computation when
                                                   #   first reported; this script makes them
                                                   #   reproducible
-python3 final_hetero_comparison_plot.py          # Figure 18: reads the CSVs from the two
+python3 final_hetero_comparison_plot.py          # Figure 20: reads the CSVs from the two
                                                   #   scripts above and plots the one-shot-vs-
                                                   #   recurrent ablation (run the two scripts
                                                   #   first)
+python3 full_memory_vs_accuracy_consolidated.py  # Section 4.11, Figure 21: reruns all ten
+                                                  #   methods (both Hopfield families, SDM, DAM,
+                                                  #   k-NN, ours, Vector-HaSH one-shot/recurrent)
+                                                  #   on ONE fully paired protocol (every method
+                                                  #   sees the identical noisy query per trial)
+                                                  #   across the full M=100-4000 range at
+                                                  #   sigma=0.3 -- confirms every number already
+                                                  #   reported at M<=800 and shows Modern
+                                                  #   Hopfield/DAM staying robust to M=4000 while
+                                                  #   ours and the modular scaffold decline further
 ```
 Table 17 (storage/time complexity) is an analytical comparison, not a simulation -- no script
-to run for it; see Section 4.8 of the paper for the derivation.
+to run for it; see Section 4.10 of the paper for the derivation.
 Runtime: most of these build an M-item store from scratch per configuration and are a few
 seconds to low minutes each; `heteroassoc_final_consolidation.py`, `heteroassoc_knn_vs_M.py`,
 and `hopfield_matched_noise_rigorous.py` sweep several $M$/noise values at $N{=}200$/point and
@@ -374,7 +413,12 @@ each build several $M$-item stores at $N{=}200$/point and take a few minutes tot
 `vectorhash_modular_scaffold_comparison.py` is a few minutes (no iterative relaxation needed for
 the one-shot pass; the recurrent decode adds a Hopfield-style fixed-point iteration per trial);
 `knn_at_sigma03_matched.py` is dominated by MNIST loading, a couple of minutes total;
-`final_hetero_comparison_plot.py` only reads existing CSVs and is instant. Note: when
+`final_hetero_comparison_plot.py` only reads existing CSVs and is instant.
+`beta_delta_fairness_full_M_sweep.py` and `ours_single_shot_readout_cliff_test.py` each build
+stores across the full M=100-4000 grid, a few minutes total; `vectorhash_own_baselines_comparison.py`
+is limited to M=100-800 (matching the other Vector-HaSH-baseline scripts) and takes a few minutes;
+`full_memory_vs_accuracy_consolidated.py` is the slowest of this group -- ten methods at every
+M from 100 to 4000, fully paired -- around 15-20 minutes. Note: when
 running these from a network-mounted working directory, redirect stdout/stderr to a local path
 (e.g. `python3 script.py > /tmp/log.txt 2>&1`) rather than one on the mount -- intermittent
 mount I/O, not the computation itself, caused sporadic silent process termination during
