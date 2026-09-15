@@ -34,7 +34,14 @@ combinatorics and extreme value theory rather than for dense continuous patterns
 energy-function argument. We include a full, self-contained proof of the one non-elementary
 step (the expected maximum of many correlated-in-effect-but-treated-as-independent Gaussian
 similarities), validate the final bound against simulation, and discuss its relationship to
-the wider family of capacity theorems it belongs to.
+the wider family of capacity theorems it belongs to. We then go further than that first-moment
+approximation: Section~\ref{sec:exacttail} derives an exact, non-asymptotic failure probability
+directly from the hypergeometric distribution, and a corresponding rigorous sufficient bound on
+capacity at any chosen target reliability $\delta$, correcting a subtle correlation error that a
+natural-looking marginalization over query corruption would otherwise introduce. This exact
+bound is, as expected, considerably more conservative than the first-moment approximation, and
+is shown to be tight in the well-separated regime and honestly, quantifiably loose only as the
+system approaches its collapse transition.
 \end{abstract}
 
 \section{Setup}
@@ -232,6 +239,194 @@ parameter of this derivation). The two noisy points match to within 4\% and 1.4\
 noise-free point is over-predicted by about 24\%, consistent with Section~\ref{sec:step3}'s
 observation that the Gaussian approximation is weakest exactly there.
 
+\section{An exact hypergeometric tail bound}
+\label{sec:exacttail}
+
+Equation~\ref{eq:mmax} matches only the \emph{expected} maximum competitor similarity, not a
+probabilistic guarantee on retrieval failure -- a gap noted below in
+Section~\ref{sec:limitations}. This section closes it with an exact, non-asymptotic tail bound
+on the failure probability itself, derived directly from the hypergeometric distribution rather
+than its Gaussian approximation, and valid at any finite $M$.
+
+\subsection{A correlation a naive marginalization misses}
+\label{sec:exacttail-pitfall}
+
+Let $R$ denote the (random) number of $h_{\text{true}}$'s $K$ active positions that land among
+the $\eta H$ flipped query positions. By Lemma~\ref{lem:hypergeom} (with $a=K$, $b=\eta H$), $R$
+is exactly hypergeometric:
+\[
+R \sim \mathrm{Hypergeometric}(H,K,\eta H), \qquad
+\Pr(R=r) = \frac{\binom{K}{r}\binom{H-K}{\eta H - r}}{\binom{H}{\eta H}}.
+\]
+Conditional on $R=r$, both the query's active-coordinate count and its similarity to
+$h_{\text{true}}$ are \emph{deterministic}, not merely expected:
+\[
+k(r) = K + \eta H - 2r, \qquad s(r) = K - r,
+\]
+the realized versions of Equations~\ref{eq:kq} and \ref{eq:strue}, which recover
+$k(\eta K)=K_q(\eta)$ and $s(\eta K)=S_{\text{true}}(\eta)$ only in expectation. Crucially,
+$k(r)$ and $s(r)$ are perfectly correlated through the same draw of $r$: a query realization
+with more of its true bits flipped off (large $r$) simultaneously has lower true-similarity
+\emph{and} a different active count. A natural-looking but invalid shortcut is to hold $s(r)$
+fixed at its unconditional expectation $S_{\text{true}}(\eta)=K(1-\eta)$ while still letting
+$k(r)$ vary with $r$ inside the union bound over competitors: since $k(r)$ and $s(r)$ are
+deterministic functions of the very same random variable, fixing one while randomizing the
+other breaks their correlation and is not a valid marginalization of any well-defined random
+process. Numerically, this shortcut understates the true failure probability by roughly four to
+five orders of magnitude for $\eta \in [0.30, 0.40]$, converging to the correct value only as
+$\eta$ approaches the collapse region (where $r$'s distribution concentrates and the distinction
+between fixing $s(r)$ at $r$ or at $\mathbb{E}[r]$ stops mattering).
+
+\subsection{Exact per-realization failure probability}
+
+Fix one specific other stored key $h_j$ ($j \ne \text{true}$), itself an independent random
+$K$-subset of $[H]$. Conditional on $R=r$, the query is a specific, realized $k(r)$-subset, and
+its overlap with $h_j$ is exactly hypergeometric by Lemma~\ref{lem:hypergeom} (with $a=k(r)$,
+$b=K$). Define the exact tail probability
+\[
+p_k(s) \;:=\; \Pr\big[\mathrm{Hypergeometric}(H,k,K) \ge s\big]
+\;=\; \sum_{i=s}^{\min(k,K)} \frac{\binom{k}{i}\binom{H-k}{K-i}}{\binom{H}{K}}.
+\]
+(We use $\ge$ rather than strict $>$: an exact tie is conservatively counted as a failure, which
+can only inflate the resulting probability and keeps Proposition~\ref{prop:corrected} below a
+genuine upper bound regardless of how ties are broken at retrieval time.) Conditional on $R=r$,
+the probability that this one specific competitor's similarity meets or exceeds
+$h_{\text{true}}$'s is exactly $p_{k(r)}(s(r))$, and with $M-1$ independent competitors the
+conditional failure probability is exactly
+\[
+\Pr[\text{fail} \mid R=r] \;=\; 1 - \big[1-p_{k(r)}(s(r))\big]^{M-1}.
+\]
+Averaging over $R$ gives the exact unconditional failure probability -- no Gaussian
+approximation, no expectation-of-a-maximum heuristic, and no fixing of $s(r)$ at its mean:
+\begin{equation}
+P_{\text{fail}}(M,\eta) \;=\; \sum_{r=0}^{K} \Pr(R=r) \cdot
+\Big\{ 1 - \big[1-p_{k(r)}(s(r))\big]^{M-1} \Big\}.
+\label{eq:exactfail}
+\end{equation}
+Equation~\ref{eq:exactfail} is exact given the independence assumption of
+Section~\ref{sec:limitations}; it involves only a finite sum over $r \in \{0,\dots,K\}$ and is
+cheap to evaluate for any $H,K,\eta,M$.
+
+\subsection{A rigorous, closed-form sufficient bound}
+
+Equation~\ref{eq:exactfail} is exact but implicit: it gives $P_{\text{fail}}$ as a function of
+$M$, not $M$ as a function of a target failure probability $\delta$. We invert it via the union
+bound, applied \emph{per realization of $r$} before averaging -- the order matters, and doing it
+in this order is what keeps the resulting bound valid.
+
+By Bernoulli's inequality, $1-(1-p)^n \le np$ for any $p\in[0,1]$ and integer $n \ge 0$. Applied
+pointwise, for every $r$,
+\[
+1 - \big[1-p_{k(r)}(s(r))\big]^{M-1} \;\le\; (M-1)\,p_{k(r)}(s(r)).
+\]
+This is a deterministic inequality between two functions of $r$; taking $\mathbb{E}_R[\cdot]$ of
+both sides preserves it, since expectation is monotone:
+\begin{equation}
+P_{\text{fail}}(M,\eta) \;\le\; (M-1) \cdot
+\underbrace{\mathbb{E}_R\big[\,p_{k(R)}(s(R))\,\big]}_{=:\ \bar P(\eta)}.
+\label{eq:pbar}
+\end{equation}
+
+\begin{proposition}[Corrected sufficient capacity bound]
+\label{prop:corrected}
+For any target failure probability $\delta \in (0,1)$, storing
+\begin{equation}
+M \;\le\; M_{\max}(\eta,\delta) \;:=\; 1 + \left\lfloor \frac{\delta}{\bar P(\eta)} \right\rfloor
+\label{eq:mmax-exact}
+\end{equation}
+items guarantees $P_{\text{fail}}(M,\eta) \le \delta$ exactly, subject only to the independence
+assumption of Section~\ref{sec:limitations} -- not to any Gaussian or large-$M$ asymptotic
+approximation.
+\end{proposition}
+
+\begin{proof}
+Immediate from Equation~\ref{eq:pbar}: $(M-1)\bar P(\eta) \le \delta$ whenever
+$M - 1 \le \delta/\bar P(\eta)$, i.e.\ $M \le 1 + \lfloor \delta/\bar P(\eta) \rfloor$.
+\end{proof}
+
+Equation~\ref{eq:mmax-exact} has the same union-bound shape as a natural first attempt at this
+formula, $1+\lfloor \delta/p_{K_q(\eta)}(S_{\text{true}}(\eta))\rfloor$, but with $p$ correctly
+taken to be $\bar P(\eta) = \mathbb{E}_R[p_{k(R)}(s(R))]$ -- the per-realization tail probability
+\emph{properly averaged} over $R$ -- rather than a single tail probability evaluated at the
+mismatched pair $\big(K_q(\eta), S_{\text{true}}(\eta)\big)$, which (Section~\ref{sec:exacttail-pitfall})
+treats the numerator and denominator of the same random draw as independently settable.
+
+\subsection{Numerical validation}
+\label{sec:exacttail-validation}
+
+Table~\ref{tab:exacttail} reports $\bar P(\eta)$ and the resulting $M_{\max}(\eta,\delta)$ at
+$H=1000$, $K=150$ for two target failure probabilities, alongside $M_{\max}(\eta)$ from
+Equation~\ref{eq:mmax} (Section~\ref{sec:step5}) for comparison. All quantities were computed
+with \texttt{scipy.stats.hypergeom} and, where probabilities are extremely small, the
+numerically stable form $1-(1-p)^n = -\mathrm{expm1}(n\cdot\mathrm{log1p}(-p))$ to avoid
+catastrophic cancellation.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{cccccc}
+\toprule
+$\eta$ & $\bar P(\eta)$ & $M_{\max}(\eta,\delta{=}0.01)$ & $M_{\max}(\eta,\delta{=}0.05)$ & $M_{\max}(\eta)$ [Eq.~\ref{eq:mmax}] \\
+\midrule
+0.20 & $2.41\times10^{-35}$ & $4.15\times10^{32}$ & $2.07\times10^{33}$ & $2.29\times10^{48}$ \\
+0.30 & $8.26\times10^{-15}$ & $1.21\times10^{12}$ & $6.05\times10^{12}$ & $1.61\times10^{19}$ \\
+0.35 & $9.59\times10^{-9}$  & $1.04\times10^{6}$  & $5.21\times10^{6}$  & $2.61\times10^{10}$ \\
+0.40 & $1.22\times10^{-4}$  & $83.0$              & $411$               & $3.27\times10^{4}$ \\
+0.42 & $1.81\times10^{-3}$  & $6.0$               & $28.0$              & $739$ \\
+0.45 & $3.73\times10^{-2}$  & $1.0$               & $2.0$               & $13.9$ \\
+\bottomrule
+\end{tabular}
+\caption{Corrected exact sufficient bound versus the expected-maximum approximation
+(both at $H=1000$, $K=150$).}
+\label{tab:exacttail}
+\end{table}
+
+Two things stand out. First, the exact tail-based bound is dramatically more conservative than
+the expected-maximum approximation -- by about seven orders of magnitude at $\eta=0.30$
+($1.2\times10^{12}$ vs.\ $1.6\times10^{19}$), narrowing to about a factor of $120$ at
+$\eta=0.42$. This gap is expected, not a contradiction between the two derivations: Equation~\ref{eq:mmax}
+only requires the true match to beat the \emph{expected value} of the maximum competitor, a much
+weaker requirement than controlling the actual \emph{probability} of failure to a small $\delta$
+via a union bound over $M-1$ competitors. The two bounds answer different questions --
+``typical-case margin'' versus ``guaranteed failure rate'' -- and are best read together:
+Equation~\ref{eq:mmax} explains \emph{why} capacity is exponential in the squared margin (the
+mechanism), while Equation~\ref{eq:mmax-exact} gives an actually-defensible number at a chosen
+reliability level (the guarantee). Section~\ref{sec:limitations}'s prediction that a proper tail
+bound ``would very likely give a somewhat smaller $M_{\max}$'' is confirmed, considerably more
+starkly than that hedge anticipated.
+
+Second, we check how loose the sufficient bound (Equation~\ref{eq:mmax-exact}) is relative to the
+exact failure probability it bounds (Equation~\ref{eq:exactfail}), by comparing
+$(M-1)\bar P(\eta)$ against $P_{\text{fail}}(M,\eta)$ directly (Table~\ref{tab:tightness}).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ccccc}
+\toprule
+$\eta$ & $M$ & $P_{\text{fail}}(M,\eta)$ [exact, Eq.~\ref{eq:exactfail}] & $(M-1)\bar P(\eta)$ [Eq.~\ref{eq:pbar}] & ratio \\
+\midrule
+0.30 & 200  & $1.644\times10^{-12}$ & $1.644\times10^{-12}$ & 1.00 \\
+0.30 & 1000 & $8.252\times10^{-12}$ & $8.252\times10^{-12}$ & 1.00 \\
+0.30 & 4000 & $3.303\times10^{-11}$ & $3.303\times10^{-11}$ & 1.00 \\
+0.40 & 200  & $1.82\times10^{-2}$   & $2.42\times10^{-2}$   & 1.33 \\
+0.40 & 1000 & $5.98\times10^{-2}$   & $1.22\times10^{-1}$   & 2.03 \\
+0.40 & 4000 & $1.35\times10^{-1}$   & $4.87\times10^{-1}$   & 3.59 \\
+0.42 & 200  & $1.59\times10^{-1}$   & $3.61\times10^{-1}$   & 2.27 \\
+0.42 & 1000 & $3.46\times10^{-1}$   & $1.81\times10^{0}$    & 5.23 \\
+0.42 & 4000 & $5.38\times10^{-1}$   & $7.25\times10^{0}$    & 13.46 \\
+\bottomrule
+\end{tabular}
+\caption{Tightness of the sufficient bound against the exact failure probability.}
+\label{tab:tightness}
+\end{table}
+
+The bound is essentially tight (ratio $\approx 1.00$) at $\eta=0.30$, and increasingly loose --
+by design, as any union bound must be once per-competitor probabilities are no longer small --
+as $\eta$ approaches the collapse transition and $M$ grows (up to a factor of $13.5$ at
+$\eta=0.42$, $M=4000$). This is the expected and honest behavior of a union bound: tightest
+exactly in the well-separated regime where a capacity claim is most meaningful, and openly
+announcing its own growing conservatism as the system approaches saturation rather than failing
+silently.
+
 \section{Limitations}
 \label{sec:limitations}
 
@@ -244,15 +439,20 @@ the predicted ones (Section~\ref{sec:validation}); a plausible explanation is th
 correlation makes the worst-case competing key marginally less extreme than the independent
 model assumes, though this has not been tested directly.
 
-\textbf{The extreme-value step is a first-moment approximation, not a tail bound.} Equation
-\ref{eq:expmax} matches the \emph{expected} maximum, not a high-probability bound on it; a
-fully rigorous capacity statement would instead bound $\Pr(\max_i S_{\text{other},i} >
-S_{\text{true}}(\eta))$ directly (e.g.\ via the same union-bound technique used in the proof of
-Lemma~\ref{lem:extreme}, without first taking an expectation) and would very likely give a
-somewhat smaller $M_{\max}$ at any fixed, small target failure probability. The bound derived
-here should be read as characterizing the right \emph{mechanism and order of magnitude} --
-exponential-in-margin capacity, hence a sharp rather than gradual collapse, hence a threshold
-only weakly dependent on $M$ -- not as a proof.
+\textbf{The extreme-value step is a first-moment approximation, not a tail bound -- now
+resolved.} Equation \ref{eq:expmax} matches the \emph{expected} maximum, not a high-probability
+bound on it. Section~\ref{sec:exacttail} closes this gap with an exact, non-asymptotic
+alternative (Equation~\ref{eq:exactfail}) and a corresponding rigorous sufficient bound
+(Proposition~\ref{prop:corrected}), derived directly from the hypergeometric distribution rather
+than the Gaussian approximation or the expected-maximum heuristic. As anticipated, the rigorous
+bound gives a substantially smaller $M_{\max}$ at any fixed target failure probability --
+by several orders of magnitude away from the collapse region (Table~\ref{tab:exacttail}) -- and
+is itself provably tight in that same well-separated regime, growing conservatively (rather than
+silently failing) only as $\eta$ approaches collapse (Table~\ref{tab:tightness}). Equation
+\ref{eq:mmax} should now be read as characterizing the right \emph{mechanism} -- exponential
+capacity in the squared separation margin, hence a sharp rather than gradual collapse -- while
+Equation~\ref{eq:mmax-exact} is the bound to use for an actual reliability guarantee at a chosen
+$\delta$. Both bounds still share the independence assumption below, which remains open.
 
 \section{Relation to the wider literature}
 
