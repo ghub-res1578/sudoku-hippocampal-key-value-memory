@@ -11,6 +11,7 @@
 
 \newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
 
 \title{An Approximate Capacity Bound for Sparse Combinatorial Key-Value Memory:\\
 Full Derivation and Validation}
@@ -306,6 +307,61 @@ P_{\text{fail}}(M,\eta) \;=\; \sum_{r=0}^{K} \Pr(R=r) \cdot
 Equation~\ref{eq:exactfail} is exact given the independence assumption of
 Section~\ref{sec:limitations}; it involves only a finite sum over $r \in \{0,\dots,K\}$ and is
 cheap to evaluate for any $H,K,\eta,M$.
+
+\subsection{No finite-size singularity: monotonicity and convexity in $M$}
+\label{sec:smoothness}
+
+Equation~\ref{eq:exactfail} is not just numerically well-behaved (Section~\ref{sec:exacttail-validation}
+below) -- it is provably free of any finite-$M$ singularity of the kind a genuine attractor-collapse
+memory cliff would produce. This is a structural property of the exact formula itself, independent of
+the union bound derived in the next section, and is worth stating as a theorem in its own right.
+
+\begin{theorem}[No finite-size singularity]
+\label{thm:smoothness}
+Fix $H$, $K$, and $\eta$, and suppose $0 < p_{k(r)}(s(r)) < 1$ for every $r$ with $\Pr(R=r)>0$ (against
+any realized corruption level, a single competitor's failure is neither impossible nor certain).
+Extend Equation~\ref{eq:exactfail} to continuous $M \ge 1$ via
+\[
+P_{\mathrm{ret}}(M,\eta) \;:=\; 1 - P_{\mathrm{fail}}(M,\eta) \;=\; \sum_{r=0}^{K} \Pr(R=r)\,
+\big[1-p_{k(r)}(s(r))\big]^{M-1}.
+\]
+Then $P_{\mathrm{ret}}(M,\eta)$ is strictly decreasing and strictly convex in $M$:
+\[
+\frac{\partial P_{\mathrm{ret}}}{\partial M} < 0, \qquad \frac{\partial^2 P_{\mathrm{ret}}}{\partial M^2} > 0.
+\]
+\end{theorem}
+
+\begin{proof}
+Write $q_r := 1-p_{k(r)}(s(r)) \in (0,1)$ for each $r$ with $\Pr(R=r)>0$. Treating $M$ as a continuous
+variable, $q_r^{M-1} = \exp[(M-1)\ln q_r]$, so
+\[
+\frac{\partial}{\partial M}\,q_r^{M-1} = q_r^{M-1}\ln q_r,
+\qquad
+\frac{\partial^2}{\partial M^2}\,q_r^{M-1} = q_r^{M-1}(\ln q_r)^2.
+\]
+Since $q_r \in (0,1)$, $\ln q_r < 0$ and $q_r^{M-1}>0$, so the first derivative is strictly negative
+and the second, a square of a nonzero real number times a positive factor, is strictly positive.
+$P_{\mathrm{ret}}(M,\eta)$ is a finite sum of these terms weighted by $\Pr(R=r)\ge0$ summing to $1$;
+differentiation is linear and commutes with a finite sum, so
+\[
+\frac{\partial P_{\mathrm{ret}}}{\partial M} = \sum_{r} \Pr(R=r)\,q_r^{M-1}\ln q_r \;<\; 0,
+\qquad
+\frac{\partial^2 P_{\mathrm{ret}}}{\partial M^2} = \sum_{r} \Pr(R=r)\,q_r^{M-1}(\ln q_r)^2 \;>\; 0,
+\]
+each a weighted average, with at least one strictly positive weight, of terms that are all strictly
+negative (respectively all strictly positive).
+\end{proof}
+
+\noindent\textbf{Interpretation.} Theorem~\ref{thm:smoothness} rules out, at the level of the exact
+model, any finite-$M$ point at which retrieval probability could drop discontinuously or bend toward
+an accelerating collapse: $P_{\mathrm{ret}}$ can only \emph{decelerate} as $M$ grows (convexity), on
+top of always decreasing (monotonicity) -- graceful, non-catastrophic degradation, now proven rather
+than only observed in simulation (Section~\ref{sec:exacttail-validation}). This is a property specific
+to the \emph{explicit-key} retrieval mechanism analyzed throughout this note: failure accumulates from
+more chances for some one unrelated stored key to accidentally resemble the query, not from the
+appearance or disappearance of a dynamical attractor -- the latter being the mechanism behind a
+genuine finite-size memory cliff in attractor-based (Hopfield-type) associative memories, and a
+distinction this note does not claim to resolve for that broader model class (Section~\ref{sec:limitations}).
 
 \subsection{A rigorous, closed-form sufficient bound}
 
