@@ -308,6 +308,22 @@ Equation~\ref{eq:exactfail} is exact given the independence assumption of
 Section~\ref{sec:limitations}; it involves only a finite sum over $r \in \{0,\dots,K\}$ and is
 cheap to evaluate for any $H,K,\eta,M$.
 
+\noindent\textbf{A small-tail approximation and a characteristic scale.} Away from the collapse
+transition, $p_{k(r)}(s(r))$ is typically small, and
+\[
+\big[1-p_{k(r)}(s(r))\big]^{M-1} \;\approx\; \exp\big[-(M-1)\,p_{k(r)}(s(r))\big],
+\]
+so, conditional on $R=r$, retrieval probability decays approximately exponentially in $M$ with a
+characteristic scale
+\[
+M^*_r \;\sim\; \frac{1}{p_{k(r)}(s(r))}.
+\]
+Intuitively: a dangerous competitor is individually unlikely at any single comparison, but there
+are $M-1$ near-independent opportunities for one to occur, and their cumulative probability grows
+with memory load -- the same ``many rare independent chances'' structure behind a Poisson
+approximation, applied here to the union of $M-1$ competitor comparisons. This is an approximation
+used only for intuition; Equation~\ref{eq:exactfail} itself requires no such approximation.
+
 \subsection{No finite-size singularity: monotonicity and convexity in $M$}
 \label{sec:smoothness}
 
@@ -509,6 +525,53 @@ silently failing) only as $\eta$ approaches collapse (Table~\ref{tab:tightness})
 capacity in the squared separation margin, hence a sharp rather than gradual collapse -- while
 Equation~\ref{eq:mmax-exact} is the bound to use for an actual reliability guarantee at a chosen
 $\delta$. Both bounds still share the independence assumption below, which remains open.
+
+\section{Outlook: an asymptotic large-deviation phase boundary}
+\label{sec:outlook}
+
+Theorem~\ref{thm:smoothness} rules out a finite-$M$ singularity at fixed $H$. It does not rule out
+an asymptotically sharp threshold if $H$ and $M$ are taken to infinity together in a suitable
+exponential scaling regime -- the same sense in which Shannon's channel coding theorem
+\cite{coverthomas} produces a sharp rate/capacity boundary only in the block-length limit, never at
+any finite block length. We record the expected shape of this limit here as motivation for future
+work, not as a proven result: the rate function below is not derived from the hypergeometric tail,
+and the statement that follows is conditional on its existence in the assumed form.
+
+Let $\rho = K/H$ and suppose the per-competitor tail probability admits a large-deviation form
+\begin{equation}
+p_H(\eta,\rho) \;\overset{H\to\infty}{\sim}\; \exp\big[-H\,I(\eta,\rho)\big]
+\label{eq:ratefunction}
+\end{equation}
+for some rate function $I(\eta,\rho)\ge0$ (large-deviation forms of this kind are standard for tail
+probabilities of hypergeometric-type sampling, by analogy with Sanov's and Cram\'er's theorems for
+sampling without replacement, but $I(\eta,\rho)$ is not derived here). If the number of stored
+memories scales exponentially with $H$, $M=\exp(\alpha H)$, then substituting
+Equation~\ref{eq:ratefunction} into $P_{\mathrm{ret}}\approx[1-p_H(\eta,\rho)]^{M-1} \approx
+\exp[-(M-1)p_H(\eta,\rho)]$ (the small-tail approximation above) gives, to leading order,
+\begin{equation}
+P_{\mathrm{ret}} \;\approx\; \exp\Big\{-\exp\big[H\big(\alpha - I(\eta,\rho)\big)\big]\Big\},
+\label{eq:doubleexp}
+\end{equation}
+a sharp threshold at
+\begin{equation}
+\alpha_c(\eta,\rho) \;=\; I(\eta,\rho): \qquad
+P_{\mathrm{ret}} \xrightarrow{H\to\infty}
+\begin{cases}
+1 & \alpha < I(\eta,\rho) \quad\text{(reliable retrieval)}\\
+0 & \alpha > I(\eta,\rho) \quad\text{(competitors overwhelm retrieval)}
+\end{cases}
+\label{eq:phaseboundary}
+\end{equation}
+with critical scaling at $\alpha=I(\eta,\rho)$.
+
+This is not a contradiction of Theorem~\ref{thm:smoothness}: a finite-$H$ curve that is provably
+smooth and convex at every finite size can still become arbitrarily sharp in a singular joint
+limit. The correct summary is \emph{no finite-size attractor-collapse cliff}, not \emph{no
+asymptotic phase boundary under any scaling}. Deriving $I(\eta,\rho)$ explicitly from the
+hypergeometric tail -- turning Equation~\ref{eq:phaseboundary}'s qualitative picture into an
+explicit phase boundary in $(\eta,\rho,\alpha)$ space -- would connect this note's finite-size
+theory directly to the large-deviation/statistical-mechanics literature cited below, and is left
+to future work.
 
 \section{Relation to the wider literature}
 
