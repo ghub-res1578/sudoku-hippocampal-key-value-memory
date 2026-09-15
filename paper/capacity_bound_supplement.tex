@@ -1,0 +1,292 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+
+\newcommand{\url}[1]{\texttt{#1}}
+\newcommand{\toprule}{\hline\hline}
+\newcommand{\midrule}{\hline}
+\newcommand{\bottomrule}{\hline\hline}
+
+\newtheorem{lemma}{Lemma}
+\newtheorem{proposition}{Proposition}
+
+\title{An Approximate Capacity Bound for Sparse Combinatorial Key-Value Memory:\\
+Full Derivation and Validation}
+
+\author{Supplementary note to ``Combinatorial Coding, Key-Value Recall, and Emergent\\
+Constraint Satisfaction in a Hippocampal-Inspired Spiking Network''}
+
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note gives the complete derivation, with every intermediate step made explicit, of the
+approximate capacity bound used in the main paper (Section 2.3): an expression for the largest
+number of items $M$ a sparse $K$-of-$H$ combinatorial key-value memory can store while
+remaining reliably retrievable under a given level of query corruption. The bound is
+structurally the same as modern Hopfield networks' proven exponential capacity
+\cite{ramsauer2020}, but is derived here for a discrete, sparse code via elementary
+combinatorics and extreme value theory rather than for dense continuous patterns via an
+energy-function argument. We include a full, self-contained proof of the one non-elementary
+step (the expected maximum of many correlated-in-effect-but-treated-as-independent Gaussian
+similarities), validate the final bound against simulation, and discuss its relationship to
+the wider family of capacity theorems it belongs to.
+\end{abstract}
+
+\section{Setup}
+
+We store $M$ items. Item $m$'s key is a binary vector $h_m \in \{0,1\}^H$ with exactly $K$
+active (value-$1$) coordinates -- a $K$-of-$H$ sparse code. Throughout this note we model the
+$M$ stored keys as independent, uniformly random $K$-subsets of $[H] = \{1,\dots,H\}$: an
+idealization relative to the true architecture, where keys are $W_{SH}$-projections of
+mutually correlated combinatorial structure (solved Sudoku grids), addressed explicitly in
+Section~\ref{sec:limitations}.
+
+A query is formed from the true key $h_{\text{true}}$ by flipping a fraction $\eta \in [0,1]$
+of all $H$ coordinates, chosen uniformly at random without replacement -- the noise model used
+throughout the main paper. Retrieval compares the query against all $M$ stored keys via
+similarity (shared active coordinates) and should return the index of $h_{\text{true}}$.
+Retrieval \emph{fails} when some other stored key's similarity to the query exceeds
+$h_{\text{true}}$'s.
+
+We ask: for fixed $H$, $K$, and corruption level $\eta$, how large can $M$ be before this kind
+of failure becomes likely?
+
+\section{Step 1: Similarity between two independent random keys}
+\label{sec:step1}
+
+\begin{lemma}[Hypergeometric overlap]
+\label{lem:hypergeom}
+Let $A, B \subset [H]$ be independent uniformly random subsets with $|A| = a$, $|B| = b$. Then
+$|A \cap B|$ is a hypergeometric random variable with
+\[
+\mathbb{E}[|A \cap B|] = \frac{ab}{H}, \qquad
+\mathrm{Var}(|A \cap B|) = a\cdot\frac{b}{H}\Big(1-\frac{b}{H}\Big)\cdot\frac{H-a}{H-1}.
+\]
+\end{lemma}
+
+\begin{proof}[Proof sketch]
+Fix $A$ and treat $B$'s $b$ elements as drawn sequentially without replacement from $[H]$.
+Let $X_i = \mathbb{1}[\text{the $i$-th draw lands in } A]$, so $|A\cap B| = \sum_{i=1}^b X_i$.
+Each $X_i$ is Bernoulli$(a/H)$ by symmetry, giving the mean by linearity of expectation. For
+the variance, $\mathrm{Cov}(X_i,X_j) < 0$ for $i\ne j$ because sampling without replacement
+makes draws negatively associated (having drawn a marked element makes drawing another
+marked element on a later draw slightly less likely); summing the $b$ variances and
+$\binom{b}{2}$ covariances gives the stated finite-population-corrected formula. (Full
+derivation: Feller, \textit{An Introduction to Probability Theory}, Vol.\ 1, Ch.\ II.)
+\end{proof}
+
+Applying Lemma~\ref{lem:hypergeom} with $a=b=K$ gives the similarity between two
+\emph{uncorrupted} stored keys: mean $K^2/H$, the number quoted throughout the main paper (e.g.\
+$K^2/H = 22.5$ for the default $H=1000$, $K=150$).
+
+\section{Step 2: Statistics of a corrupted query}
+\label{sec:step2}
+
+Flipping a uniformly random fraction $\eta$ of all $H$ coordinates is itself an instance of
+Lemma~\ref{lem:hypergeom}: the $\eta H$ flipped positions are a random subset of $[H]$, and we
+ask how many of $h_{\text{true}}$'s $K$ active positions they contain. By the lemma (with
+$a=K$, $b=\eta H$), the expected number of active positions flipped \emph{off} is $\eta K$, so
+\begin{equation}
+S_{\text{true}}(\eta) \;=\; \mathbb{E}\big[\,\text{similarity of query to } h_{\text{true}}\,\big] \;=\; K(1-\eta),
+\label{eq:strue}
+\end{equation}
+exactly (no further approximation needed: this is a direct expectation, not a bound). The
+expected number of originally-\emph{inactive} positions flipped \emph{on} is, symmetrically,
+$\eta(H-K)$, so the corrupted query's own total active-coordinate count is, in expectation,
+\begin{equation}
+K_q(\eta) \;=\; K(1-\eta) + \eta(H-K) \;=\; K(1-2\eta) + \eta H.
+\label{eq:kq}
+\end{equation}
+The query's similarity to any \emph{other}, independent stored key is now Lemma~\ref{lem:hypergeom}
+applied with $a = K_q(\eta)$, $b=K$:
+\begin{equation}
+\mu_{\text{other}}(\eta) = \frac{K_q(\eta)\,K}{H}, \qquad
+\sigma_{\text{other}}^2(\eta) = K_q(\eta)\,\frac{K}{H}\Big(1-\frac{K}{H}\Big)\frac{H-K_q(\eta)}{H-1}.
+\label{eq:muother}
+\end{equation}
+
+\section{Step 3: Gaussian approximation}
+\label{sec:step3}
+
+The hypergeometric distribution of $S_{\text{other}}$ (similarity to one specific other key) is
+exact but discrete and unwieldy for the extreme-value step that follows. We approximate
+\[
+S_{\text{other}} \;\approx\; \mathcal{N}\big(\mu_{\text{other}}(\eta),\, \sigma_{\text{other}}^2(\eta)\big),
+\]
+justified for $H \gg 1$ by the central limit theorem for sampling without replacement from a
+finite population \cite{erdosrenyi1959,hajek1960}: sums arising from simple random sampling
+without replacement are asymptotically normal as the population size grows, with exactly the
+finite-population-corrected variance already appearing in Lemma~\ref{lem:hypergeom}. This is
+the least exact step in the derivation, and its error is largest precisely when $\sigma_{\text{other}}$
+is small relative to the mean -- i.e.\ at low noise, where the discreteness of the underlying
+hypergeometric distribution matters most. Section~\ref{sec:validation} quantifies this error
+directly rather than leaving it as a caveat.
+
+\section{Step 4: The maximum of many competitors}
+\label{sec:step4}
+
+Retrieval does not fail when the \emph{typical} competing key looks similar to the query --
+it fails when the \emph{single most similar} of the $M-1$ competitors exceeds
+$S_{\text{true}}(\eta)$. This is an extreme-value criterion, and it is the step that most
+distinguishes this derivation from a naive signal-to-noise argument.
+
+\begin{lemma}[Expected maximum of i.i.d.\ Gaussians]
+\label{lem:extreme}
+Let $Z_1,\dots,Z_n$ be i.i.d.\ $\mathcal{N}(0,1)$. Then
+\[
+\mathbb{E}\Big[\max_{1\le i\le n} Z_i\Big] \;\le\; \sqrt{2\ln n} \;+\; o(1) \quad \text{as } n\to\infty,
+\]
+and this bound is asymptotically tight: $\mathbb{E}[\max_i Z_i] = \sqrt{2\ln n}\,(1+o(1))$.
+\end{lemma}
+
+\begin{proof}[Proof of the upper bound]
+For any $t \ge 0$, the standard Gaussian tail (Chernoff) bound gives $\Pr(Z_1 > t) \le
+e^{-t^2/2}$: with $s=t$, $\Pr(Z_1>t) = \Pr(e^{sZ_1} > e^{st}) \le \mathbb{E}[e^{sZ_1}]e^{-st} =
+e^{s^2/2 - st}$, minimized at $s=t$. A union bound over the $n$ variables gives $\Pr(\max_i Z_i
+> t) \le \min(1,\, n e^{-t^2/2})$. Writing the expectation of a nonnegative random variable as
+an integral of its tail,
+\[
+\mathbb{E}\Big[\max_i Z_i\Big] = \int_0^\infty \Pr\Big(\max_i Z_i > t\Big)\,dt
+\;\le\; \int_0^{t^*} 1 \,dt + \int_{t^*}^\infty n e^{-t^2/2}\,dt,
+\]
+where $t^* = \sqrt{2\ln n}$ is chosen so the two bounds on the integrand meet ($n e^{-(t^*)^2/2}
+= 1$). The first integral is exactly $t^* = \sqrt{2\ln n}$. For the second, the standard
+Gaussian tail estimate $\int_a^\infty e^{-t^2/2}\,dt \le \tfrac{1}{a}e^{-a^2/2}$ (for $a>0$,
+obtained by writing $e^{-t^2/2} \le \tfrac{t}{a}e^{-t^2/2}$ on $t\ge a$ and integrating exactly)
+gives
+\[
+\int_{t^*}^\infty n e^{-t^2/2}\,dt \;\le\; \frac{n}{t^*}e^{-(t^*)^2/2} = \frac{1}{\sqrt{2\ln n}} \;\xrightarrow{n\to\infty}\; 0.
+\]
+Summing the two pieces gives $\mathbb{E}[\max_i Z_i] \le \sqrt{2\ln n} + o(1)$. The matching
+lower bound requires a second-moment (Paley--Zygmund-type) argument and is omitted here; see
+Boucheron, Lugosi \& Massart, \textit{Concentration Inequalities} \cite{blm2013}, Ch.\ 2, for
+the complete two-sided result.
+\end{proof}
+
+Rescaling Lemma~\ref{lem:extreme} to $\mathcal{N}(\mu_{\text{other}},\sigma_{\text{other}}^2)$
+variables and setting $n = M-1$ (the number of competing stored keys) gives the working
+approximation used in the main paper:
+\begin{equation}
+\mathbb{E}\Big[\max_{i=1}^{M-1} S_{\text{other},i}\Big] \;\approx\; \mu_{\text{other}}(\eta) + \sigma_{\text{other}}(\eta)\sqrt{2\ln(M-1)}.
+\label{eq:expmax}
+\end{equation}
+
+\section{Step 5: Solving for capacity}
+\label{sec:step5}
+
+Retrieval is (approximately, at the level of expectations rather than a proper tail bound on
+failure probability) reliable when $S_{\text{true}}(\eta)$ exceeds the expected maximum
+competitor, Equation~\ref{eq:expmax}. Define the normalized separation margin
+\begin{equation}
+z(\eta) \;=\; \frac{S_{\text{true}}(\eta) - \mu_{\text{other}}(\eta)}{\sigma_{\text{other}}(\eta)}.
+\label{eq:margin}
+\end{equation}
+Setting $S_{\text{true}}(\eta) = \mu_{\text{other}}(\eta) + \sigma_{\text{other}}(\eta)\sqrt{2\ln(M-1)}$
+and solving for $M$:
+\begin{equation}
+z(\eta) = \sqrt{2\ln(M-1)} \quad\Longleftrightarrow\quad M-1 = \exp\!\left(\frac{z(\eta)^2}{2}\right)
+\quad\Longleftrightarrow\quad
+\boxed{M_{\max}(\eta) \;\approx\; 1 + \exp\!\left(\frac{z(\eta)^2}{2}\right).}
+\label{eq:mmax}
+\end{equation}
+
+\begin{proposition}[Structural form]
+Equation~\ref{eq:mmax} states that capacity is exponential in the \emph{square} of a
+normalized signal-to-noise-like quantity. This is the same structural form as modern Hopfield
+networks' proven capacity $C \cong 2^{d/2}$ \cite{ramsauer2020}, though that bound is derived
+via a Lyapunov energy-function argument (the Concave--Convex Procedure applied to a
+log-sum-exp energy) over dense continuous patterns, not via hypergeometric statistics over a
+sparse discrete code.
+\end{proposition}
+
+\section{Validation against simulation}
+\label{sec:validation}
+
+Equations \ref{eq:strue}--\ref{eq:mmax} were implemented exactly as derived
+(\texttt{capacity\_bound\_derivation.py}, no free parameters fit to data) and compared against
+the empirically measured collapse thresholds reported in the main paper.
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+ & $M{=}50$ & $M{=}1000$ & $M{=}10{,}000$ & $K{=}10$ & $K{=}150$ \\
+\midrule
+Predicted (this note, $H{=}1000$) & 43.9\% & 41.9\% & 40.6\% & 24.5\% & 41.9\% \\
+Observed (simulation) & 45\% & 45\% & 40\% & 25\% & 40--45\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Agreement is within 1--5 percentage points across a 200-fold range of $M$ and an order of
+magnitude in $K$, including an almost exact match at $K=10$. A second, independent check: at
+$H{=}1000$, $K{=}150$, $M{=}200$, the derivation predicts the ratio $S_{\text{true}}(\eta) /
+\mathbb{E}[\max_{i} S_{\text{other},i}]$ at $\eta \in \{0, 0.20, 0.30\}$ as $4.21$, $1.99$,
+$1.47$ respectively, against independently measured ratios of $3.39$, $1.92$, $1.45$ (obtained
+from a completely separate experiment, the separation-operator ablation, not used to fit any
+parameter of this derivation). The two noisy points match to within 4\% and 1.4\%; the
+noise-free point is over-predicted by about 24\%, consistent with Section~\ref{sec:step3}'s
+observation that the Gaussian approximation is weakest exactly there.
+
+\section{Limitations}
+\label{sec:limitations}
+
+Two assumptions are false by construction and are stated as such rather than absorbed silently.
+
+\textbf{Independence.} Real stored keys are $W_{SH}$-projections of genuinely correlated
+combinatorial objects (solved Sudoku grids share row/column/box structure), not independent
+uniform random subsets. The observed collapse thresholds sit consistently at or slightly above
+the predicted ones (Section~\ref{sec:validation}); a plausible explanation is that this real
+correlation makes the worst-case competing key marginally less extreme than the independent
+model assumes, though this has not been tested directly.
+
+\textbf{The extreme-value step is a first-moment approximation, not a tail bound.} Equation
+\ref{eq:expmax} matches the \emph{expected} maximum, not a high-probability bound on it; a
+fully rigorous capacity statement would instead bound $\Pr(\max_i S_{\text{other},i} >
+S_{\text{true}}(\eta))$ directly (e.g.\ via the same union-bound technique used in the proof of
+Lemma~\ref{lem:extreme}, without first taking an expectation) and would very likely give a
+somewhat smaller $M_{\max}$ at any fixed, small target failure probability. The bound derived
+here should be read as characterizing the right \emph{mechanism and order of magnitude} --
+exponential-in-margin capacity, hence a sharp rather than gradual collapse, hence a threshold
+only weakly dependent on $M$ -- not as a proof.
+
+\section{Relation to the wider literature}
+
+This derivation belongs to a family of results sharing one underlying question: does a correct
+answer stand out against the \emph{extreme} value among exponentially or combinatorially many
+near-random alternatives? The same skeleton, worked out through different technical routes,
+underlies Shannon's channel coding theorem \cite{coverthomas}, the Random Energy Model in
+spin-glass theory \cite{mezardmontanari2009}, Gardner's perceptron capacity
+\cite{gardner1988}, and the classical Amit--Gutfreund--Sompolinsky analysis of Hopfield network
+capacity \cite{ags1987}. Kanerva's original capacity analysis for sparse distributed memory
+\cite{kanerva1988} is the closest existing derivation in spirit to this one -- also a sparse
+binary code, also analyzed via combinatorial (there, Hamming-ball volume) arguments -- though
+via a different geometric route than the hypergeometric-overlap statistics used here.
+
+\begin{thebibliography}{99}
+
+\bibitem{ramsauer2020} H.~Ramsauer et al., ``Hopfield networks is all you need,'' \textit{arXiv:2008.02217} (2020).
+
+\bibitem{erdosrenyi1959} P.~Erd\H{o}s, A.~R\'enyi, ``On a central limit theorem for samples from a finite population,'' \textit{Publ.\ Math.\ Inst.\ Hungarian Acad.\ Sci.} \textbf{4}, 49--61 (1959).
+
+\bibitem{hajek1960} J.~H\'ajek, ``Limiting distributions in simple random sampling from a finite population,'' \textit{Publ.\ Math.\ Inst.\ Hungarian Acad.\ Sci.} \textbf{5}, 361--374 (1960).
+
+\bibitem{blm2013} S.~Boucheron, G.~Lugosi, P.~Massart, \textit{Concentration Inequalities: A Nonasymptotic Theory of Independence}, Oxford University Press (2013).
+
+\bibitem{coverthomas} T.~M.~Cover, J.~A.~Thomas, \textit{Elements of Information Theory}, Wiley (2006).
+
+\bibitem{mezardmontanari2009} M.~M\'ezard, A.~Montanari, \textit{Information, Physics, and Computation}, Oxford University Press (2009).
+
+\bibitem{gardner1988} E.~Gardner, ``The space of interactions in neural network models,'' \textit{J.\ Phys.\ A} \textbf{21}, 257 (1988).
+
+\bibitem{ags1987} D.~J.~Amit, H.~Gutfreund, H.~Sompolinsky, ``Statistical mechanics of neural networks near saturation,'' \textit{Ann.\ Phys.} \textbf{173}, 30--67 (1987).
+
+\bibitem{kanerva1988} P.~Kanerva, \textit{Sparse Distributed Memory}, MIT Press (1988).
+
+\end{thebibliography}
+
+\end{document}
