@@ -117,7 +117,8 @@ work to speak to:
   Section~\ref{sec:capacity-theory} derives, for our own sparse combinatorial code, an
   approximate capacity bound of the same exponential-in-margin form as modern Hopfield
   networks' proven one \cite{ramsauer2020}, validated against the capacity sweep of
-  Section~3.1.
+  Section~3.1, and then a second, exact hypergeometric tail bound that upgrades this from a
+  first-moment approximation to a genuine, non-asymptotic guarantee on failure probability.
   \item \textbf{Constraint satisfaction as dynamics.} We ask whether Sudoku's legality
   constraint, which the architecture above uses explicitly as a hard-coded cleanup rule, can
   instead be realized as an emergent property of a spiking network's synchronization
@@ -266,6 +267,7 @@ bound
 \begin{equation}
 M_{\max}(\eta) \;\approx\; 1 + \exp\!\left(\frac{z(\eta)^2}{2}\right), \qquad
 z(\eta) = \frac{S_{\mathrm{true}}(\eta) - \mu_{\mathrm{other}}(\eta)}{\sigma_{\mathrm{other}}(\eta)}.
+\label{eq:mmax-expected}
 \end{equation}
 This is, structurally, the same kind of result as the exponential storage capacity of modern
 Hopfield networks \cite{ramsauer2020} -- capacity growing exponentially in a squared,
@@ -308,6 +310,69 @@ have not tested this explanation directly. What the bound establishes is the rig
 (an exponential-in-margin capacity, hence a sharp rather than gradual collapse, hence an
 approximately $M$-independent threshold over the tested range) and the right order of magnitude,
 not a proof.
+
+\textbf{From an expected value to a rigorous bound.} Equation~\ref{eq:mmax-expected} matches
+only the \emph{expected} value of the maximum competing similarity, not a probabilistic
+guarantee on retrieval failure -- a first-moment approximation, not a tail bound. We now derive
+one exactly, directly from the hypergeometric distribution rather than its Gaussian
+approximation (full derivation and proofs in the supplementary note, Section~8).
+
+Let $R$ be the number of the true key's $K$ active bits that land among the $\eta H$ flipped
+query positions; $R$ is exactly hypergeometric, $R\sim\mathrm{Hypergeometric}(H,K,\eta H)$.
+Conditional on the realized $R=r$, both the query's active-bit count $k(r) = K + \eta H - 2r$
+and its true-key similarity $s(r) = K-r$ are deterministic -- and perfectly correlated through
+the same draw of $r$, a subtlety that a natural-looking shortcut (holding $s(r)$ fixed at its
+unconditional mean $K(1-\eta)$ while still letting $k(r)$ vary with $r$) gets wrong, understating
+the true failure probability by four to five orders of magnitude for $\eta\in[0.30,0.40]$.
+Writing $p_k(s) := \Pr[\mathrm{Hypergeometric}(H,k,K)\ge s]$ for the exact probability that one
+specific competitor's similarity meets or exceeds $s$, the exact unconditional failure
+probability is
+\begin{equation}
+P_{\mathrm{fail}}(M,\eta) \;=\; \sum_{r=0}^{K} \Pr(R=r)\,\Big\{1-\big[1-p_{k(r)}(s(r))\big]^{M-1}\Big\}.
+\label{eq:pfail-exact}
+\end{equation}
+A pointwise union bound (Bernoulli's inequality, applied per realization of $r$ before
+averaging) turns this into a closed-form, rigorous sufficient condition: with
+$\bar P(\eta) := \mathbb{E}_R\big[p_{k(R)}(s(R))\big]$,
+\begin{equation}
+M \;\le\; M_{\max}(\eta,\delta) \;:=\; 1 + \left\lfloor \frac{\delta}{\bar P(\eta)} \right\rfloor
+\label{eq:mmax-exact-main}
+\end{equation}
+guarantees $P_{\mathrm{fail}}(M,\eta)\le\delta$ \emph{exactly}, at any finite $M$, with no
+Gaussian or large-$M$ asymptotic approximation.
+
+\refstepcounter{table}\label{tab:capacity-exact}
+\noindent\textbf{Table \thetable.} Rigorous sufficient bound (Eq.~\ref{eq:mmax-exact-main}) vs.\
+the expected-maximum approximation (Eq.~\ref{eq:mmax-expected}); $H{=}1000$, $K{=}150$.
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+$\eta$ & $\bar P(\eta)$ & $M_{\max}(\eta,\delta{=}0.01)$ & $M_{\max}(\eta,\delta{=}0.05)$ & $M_{\max}(\eta)$, Eq.~\ref{eq:mmax-expected} \\
+\midrule
+0.20 & $2.41\times10^{-35}$ & $4.15\times10^{32}$ & $2.07\times10^{33}$ & $2.28\times10^{48}$ \\
+0.30 & $8.26\times10^{-15}$ & $1.21\times10^{12}$ & $6.05\times10^{12}$ & $1.61\times10^{19}$ \\
+0.35 & $9.59\times10^{-9}$  & $1.04\times10^{6}$  & $5.21\times10^{6}$  & $2.61\times10^{10}$ \\
+0.40 & $1.22\times10^{-4}$  & $83.0$              & $411$               & $3.26\times10^{4}$ \\
+0.42 & $1.81\times10^{-3}$  & $6.0$               & $28.0$              & $739$ \\
+0.45 & $3.73\times10^{-2}$  & $1.0$               & $2.0$               & $13.9$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The rigorous bound is dramatically more conservative than the expected-maximum approximation --
+by about seven orders of magnitude at $\eta{=}0.30$, narrowing to roughly a factor of $120$ at
+$\eta{=}0.42$ -- which is expected rather than contradictory: Equation~\ref{eq:mmax-expected}
+only requires the true match to beat a \emph{typical} competitor, while
+Equation~\ref{eq:mmax-exact-main} controls an actual failure \emph{probability} via a union
+bound over $M{-}1$ competitors, a strictly stronger guarantee. Checked directly against
+$P_{\mathrm{fail}}(M,\eta)$ (Eq.~\ref{eq:pfail-exact}) rather than the union bound that produces
+Eq.~\ref{eq:mmax-exact-main}, the sufficient bound is essentially tight (ratio $\approx1.00$) at
+$\eta{=}0.30$ and grows honestly conservative -- rather than silently wrong -- as $\eta$
+approaches the collapse transition (up to $13.5\times$ at $\eta{=}0.42$, $M{=}4000$). The two
+bounds are best read together: Equation~\ref{eq:mmax-expected} explains \emph{why} capacity is
+exponential in the squared separation margin (the mechanism), while
+Equation~\ref{eq:mmax-exact-main} gives the number to actually use at a chosen reliability
+level $\delta$.
 
 \section{Results}
 
@@ -1746,11 +1811,17 @@ available from any single alternative tested.
 
 \section{Methods}
 
-Section~\ref{sec:capacity-theory}'s capacity bound (Table~\ref{tab:capacity-theory}) is
+Section~\ref{sec:capacity-theory}'s expected-maximum bound (Table~\ref{tab:capacity-theory}) is
 computed by \texttt{capacity\_bound\_derivation.py} -- an analytical calculation, not a
 simulation: exact hypergeometric moments for the two similarity distributions, the standard
 leading-order Gaussian extreme-value approximation for the maximum of $M{-}1$ competitors, and
-a numerical solve of $M_{\max}(\eta)=M$ over a fine grid of $\eta$.
+a numerical solve of $M_{\max}(\eta)=M$ over a fine grid of $\eta$. The rigorous exact
+hypergeometric tail bound (Table~\ref{tab:capacity-exact}) is computed separately by
+\texttt{capacity\_bound\_exact\_tail.py}: no Gaussian approximation anywhere, using
+\texttt{scipy.stats.hypergeom} directly for both the corruption distribution $R$ and the
+per-competitor tail probabilities $p_k(s)$, with the numerically stable form
+$1-(1-p)^n=-\mathrm{expm1}(n\cdot\mathrm{log1p}(-p))$ used throughout to avoid catastrophic
+cancellation at the very small probabilities involved.
 
 All simulations use Brian2 \cite{brian2}. Spiking network parameters: $\tau_m=40$\,ms,
 $f_{\mathrm{osc}}=10$\,Hz, $V_{\mathrm{th}}=1$, $V_{\mathrm{reset}}=0$, integration timestep
