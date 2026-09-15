@@ -1206,6 +1206,19 @@ content-\emph{independent} way (Section~2); ours is content-dependent (legality-
 still delivers the qualitative signature the scaffold is meant to produce, and does so an
 order of magnitude beyond where the shared learning rule alone can reach.
 
+MESH's own paper motivates exactly this factorization by citing the same fragility we observe
+directly above: pseudo-inverse-learned recurrent memories are known to develop vanishing basins
+of attraction well before their nominal capacity \cite{personnaz1986,kanter1987}. Their fix is
+architectural, not a different learning rule -- pseudo-inverse learning is used only for a
+one-shot, non-recurrent link from content to a separately-stabilized scaffold, never as the
+recurrent weight matrix that must itself survive noise. The ablation above is, in effect, an
+independent replication of that same design principle in a different domain: our own
+pseudo-inverse-learned pathway ($W_{SI}$, $W_{IS}$) is exactly as fragile as the literature
+predicts when asked to do the recurrent error-correction job alone (the pseudo-inverse Hopfield
+baseline above), and stable only once paired with a separate, non-pseudo-inverse cleanup step
+-- the same principle, tested here on Sudoku-legality cleanup rather than a k-winners-take-all
+attractor scaffold.
+
 \subsection{Comparison to Modern Hopfield, sparse distributed memory, and dense associative
 memory: capacity as a property of the key space, not the neuron count}
 \label{sec:modern-comparison}
@@ -1677,6 +1690,27 @@ contradicting, MESH's diagnosis: what avoids the cliff is not a specific substra
 attractor network, in their case; a symbolic or spiking cleanup step, in ours) but the presence
 of some mechanism doing more work than raw associative recall alone.
 
+MESH levels a second, distinct criticism at dense associative memory's bipartite pairwise
+approximation \cite{sharma2022}: achieving its exponential-in-$N$ capacity requires the hidden
+layer to be resized so that $N_{\mathrm{hidden}}$ exactly equals the number of stored memories,
+so a single fixed network cannot span a range of $M$ -- precisely the rigidity their own
+scaffold is built to avoid. Our own architecture makes an analogous decoupling through a
+different mechanism. The relational substrate is fixed at $N{=}81$ Sudoku cells (Section~2.1)
+and the engram at a fixed $H{=}1000$ dimensions; neither is ever resized. The identical
+$(N,H,K)$ triple is used, unmodified, across the entire $M{=}50$-to-$10{,}000$ range of
+Table~\ref{tab:capacity-theory} (Section~\ref{sec:capacity-theory}), where a capacity bound
+derived once for that fixed triple correctly predicts collapse behavior throughout. Memory
+capacity here is therefore not a property of the number of relational units or engram
+dimensions directly -- $81$ and $1000$ are both minuscule -- but of the combinatorial space
+those fixed resources address into, intersected with the actual combinatorial structure of the
+stored content itself ($6.7\times10^{21}$ valid grids, Section~1). This is the same source of
+capacity MESH's own scaffold exploits ($\binom{N_L}{k}$ states from $N_L$ label neurons):
+exponential in fixed resources, rather than requiring those resources to track $M$. It is worth
+being precise about what this parallel does \emph{not} claim: like Modern Hopfield's and dense
+associative memory's own pattern matrices (Table~\ref{tab:construction}), our explicit store of
+(key, value) pairs does grow by one entry per stored item -- what stays fixed is the
+discriminative machinery those keys are drawn from, not the bookkeeping of storing them.
+
 \textbf{A note on hardware implementability.} The comparison above is at the level of
 statistics, not substrate, but the two families differ in a way worth stating explicitly. MESH
 and Vector-HaSH's capacity guarantees rest on pseudoinverse-learned heteroassociative weights
@@ -2099,6 +2133,13 @@ associative memory from spatial scaffolds in the hippocampus,'' \textit{Nature} 
 
 \bibitem{sharma2022} S.~Sharma, S.~Chandra, I.~Fiete, ``Content addressable memory without
 catastrophic forgetting by heteroassociation with a fixed scaffold,'' \textit{ICML} (2022).
+
+\bibitem{personnaz1986} L.~Personnaz, I.~Guyon, G.~Dreyfus, ``Collective computational
+properties of neural networks: New learning mechanisms,'' \textit{Physical Review A}
+\textbf{34}(5), 4217 (1986).
+
+\bibitem{kanter1987} I.~Kanter, H.~Sompolinsky, ``Associative recall of memory without
+errors,'' \textit{Physical Review A} \textbf{35}(1), 380 (1987).
 
 \bibitem{mcclelland1995} J.~L.~McClelland, B.~L.~McNaughton, R.~C.~O'Reilly, ``Why there are
 complementary learning systems in the hippocampus and neocortex: insights from the successes
