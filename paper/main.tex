@@ -28,11 +28,18 @@ binary engrams -- fixed random projections of each grid's relational (same-digit
 and retrieves them through an attention-based key-value readout. The readout shows no observed
 capacity ceiling to $M{=}2000$ stored items where a regression-based alternative collapses
 catastrophically at $M{\sim}H$, and degrades gracefully rather than catastrophically under
-query corruption or partial cues. We derive an approximate capacity bound for this sparse
-combinatorial code -- exponential in a squared separation margin, the same structural form as
-modern Hopfield networks' proven bound -- from hypergeometric similarity statistics and an
-extreme-value argument, validated against simulation to within a few percentage points. This
-motivates a three-level division of labor the architecture implements: a periodically-driven
+query corruption or partial cues. Retrieval failure in this code is quantitatively predictable,
+not merely qualitative: it occurs when the extreme tail of accidental overlap between a query
+and its $M{-}1$ competing memories exceeds the query's overlap with its own true target. We
+derive this capacity bound two ways from hypergeometric similarity statistics -- an
+extreme-value approximation, structurally the same exponential-in-margin form as modern
+Hopfield networks' proven bound, that explains the observed sharp collapse threshold; and an
+exact, non-asymptotic hypergeometric tail bound that turns this into a genuine finite-$M$
+reliability guarantee at any target failure probability -- both validated against simulation to
+within a few percentage points. Because solved Sudoku grids are a correlated, structured
+combinatorial code rather than an independently-random one, storing them lets us directly
+measure how much that structure perturbs capacity relative to the idealized random-code limit.
+This motivates a three-level division of labor the architecture implements: a periodically-driven
 relational sensor, a non-dynamical combinatorial memory (whose capacity the bound describes),
 and an outer loop converging to a discrete fixed point -- structurally different from classical
 or modern Hopfield networks, which collapse sensing and memory into one system. A
@@ -51,22 +58,24 @@ through the identical associative pipeline, is statistically indistinguishable f
 hard-coded rule it replaces (Wilcoxon $p{>}0.05$ at every tested clue fraction), while
 remaining robust to substantial drive-current noise.
 
-Finally, we extend the engram to a second modality (natural images) and benchmark it
-extensively, and honestly, against the associative-memory literature. Classical, covariance,
-and several further Hopfield variants -- including four specified in Vector-HaSH's own
-comparison \cite{chandra2025} -- collapse to near-zero recovery on real correlated images;
-$k$-nearest-neighbor and sharply-separating methods (Modern Hopfield, dense associative
-memory) do not, and substantially outperform our raw accuracy at scale ($M{\geq}800$). We
-quantify this gap directly rather than infer it: our own readout, isolated from its cleanup
-loop, has a hidden memory cliff of the same kind as classical Hopfield's, and the cleanup loop
--- not the readout -- is responsible for masking it. A faithfully-built Vector-HaSH-style
-modular scaffold, given a genuinely recurrent rather than independent correction step, beats
-our own architecture at $M{\geq}200$, though the advantage narrows by $M{=}4000$. The
-architecture's case rests on a structural property none of these alternatives share: a fixed
-key, drawn from an astronomically large combinatorial space and fully decoupled from content,
-that serves arbitrary modalities while simultaneously solving the original Sudoku-legality
-task -- matching every purpose-built alternative at low-to-moderate noise and storage load.
-All code, data, and reproduction instructions accompany this paper.
+Finally, we stress-test the same fixed key against the wider associative-memory literature by
+extending it to a second modality (natural images), deliberately benchmarking against methods
+purpose-built for this exact task rather than only easier baselines. Classical, covariance, and
+several further Hopfield variants -- including four specified in Vector-HaSH's own comparison
+\cite{chandra2025} -- collapse to near-zero recovery on real correlated images, while our
+architecture degrades gracefully an order of magnitude further out; sharply-separating methods
+(Modern Hopfield, dense associative memory) and $k$-nearest-neighbor, however, substantially
+outperform our raw accuracy at scale ($M{\geq}800$), and we trace this gap to its exact source
+rather than leave it as an aggregate number: our own readout, isolated from its cleanup loop,
+has a hidden memory cliff of the same kind as classical Hopfield's, masked only by the cleanup
+loop layered on top of it -- and directly tested for a temperature-tuning fix, which does not
+close it. A faithfully-built Vector-HaSH-style modular scaffold similarly beats our
+architecture at $M{\geq}200$, though the advantage narrows by $M{=}4000$. What none of these
+purpose-built alternatives share is the property this architecture is actually for: a single
+fixed key, drawn from an astronomically large combinatorial space and fully decoupled from
+content, that serves arbitrary modalities while simultaneously solving the original
+Sudoku-legality constraint task. All code, data, and reproduction instructions accompany this
+paper.
 \end{abstract}
 
 \section{Introduction}
