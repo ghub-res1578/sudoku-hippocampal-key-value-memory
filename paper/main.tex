@@ -1661,6 +1661,47 @@ magnitude further out (Table~\ref{tab:hopfield}). This is the same qualitative s
 Vector-HaSH's content-independent scaffold is built to produce, obtained here from a
 content-\emph{dependent} one.
 
+MESH \cite{sharma2022} gives this specific failure mode a name and an explicit cure: it
+factorizes any content-addressable memory into a fixed, content-independent \emph{scaffold}
+(their bipartite attractor network; grid-cell/hippocampal recurrence in Vector-HaSH) that alone
+sets how many states the network can hold, and a separately-learned \emph{heteroassociative}
+pathway that alone sets how much detail is retrievable about each -- producing what they call a
+CAM continuum: graceful, monotonic loss of detail rather than sudden loss of everything.
+Table~\ref{tab:hopfield} is, in effect, an independent instance of exactly that contrast, but
+from a different mechanism: the core engram/readout/cleanup pipeline (Sections~2--3) has no
+attractor scaffold at all -- the engram is a single feedforward hash, not a settled fixed point
+of any recurrent network -- and removing exactly one component (the separate legality-based
+cleanup step, or, Section~\ref{sec:modern-comparison}, properly re-validated separation
+sharpness) is what turns a memory cliff back on. This is consistent with, rather than
+contradicting, MESH's diagnosis: what avoids the cliff is not a specific substrate (a physical
+attractor network, in their case; a symbolic or spiking cleanup step, in ours) but the presence
+of some mechanism doing more work than raw associative recall alone.
+
+\textbf{A note on hardware implementability.} The comparison above is at the level of
+statistics, not substrate, but the two families differ in a way worth stating explicitly. MESH
+and Vector-HaSH's capacity guarantees rest on pseudoinverse-learned heteroassociative weights
+($W_{HF}=HF^+$) -- an exact, global computation over the entire stored pattern set that must, in
+principle, be redone (or approximated online, as MESH's own Methods discusses) every time a new
+item is learned, not a purely local, synapse-by-synapse update of the kind neuromorphic hardware
+is built around. The core engram/readout/cleanup pipeline needs no learned weight matrix at all:
+$W_{SH}$ is a fixed random projection set once, storage is literally appending one row to a
+table with no relearning of anything already stored, and the softmax-attention readout has no
+trainable parameters -- a genuine content-addressable memory rather than a weight-matrix-based
+associative one. The constraint-satisfaction step goes further: its coupling weights ($w_{IE}$,
+$w_{EE}$) are fixed constants gated on and off by a conflict mask computed from the current
+dynamical state, not learned from data at all (Limitations, below), and it is the only mechanism
+in this paper's comparisons already implemented as literal continuous-time spiking neurons
+rather than a discrete-time $\mathrm{sign}(\cdot)$/top-$k$ abstraction. We have not measured
+this: no energy, latency, or neuromorphic-hardware benchmark was run for any architecture
+compared in this paper, and the cross-modal extension (Section~\ref{sec:hetero}) reintroduces
+the identical ridge-regularized pseudoinverse rule MESH and Vector-HaSH use, so this argument is
+specific to the core pipeline, not the full architecture as extended to images. What we can say
+is architectural rather than measured: the core pipeline's only nontrivial computation --
+similarity of a query to $M$ stored keys -- is exactly the primitive that in-memory and analog
+crossbar accelerators compute as a single parallel physical operation, rather than as $M$
+sequential comparisons or a globally-inverted matrix that a pseudoinverse-based scaffold's write
+step requires.
+
 We invoke the statistical mechanics of constraint satisfaction and random $k$-SAT
 \cite{mezard2002,mezard2009} as motivating context for why constraint density and dynamics
 near a solvability boundary are worth studying together -- and, relatedly, why McGuire et
