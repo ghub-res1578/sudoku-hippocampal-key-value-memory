@@ -1099,6 +1099,22 @@ $\min(M,H)$, and doubling $H$ from $1000$ to $2000$ (density held fixed) measura
 one -- exact recovery at $M{=}2000$, $\sigma{=}0.1$ rises from $80\%$ ($H{=}1000$) to $90\%$
 ($H{=}2000$) -- with zero effect on the image-side ceiling, exactly as the algebra predicts.
 
+MESH's own heteroassociation theorems are explicit about exactly this dependency, rather than
+leaving it implicit. Their Theorem 5.1 states that pseudoinverse-learned heteroassociation from
+the feature layer to the hidden layer reconstructs perfectly only if the $N_F \times N_{\mathrm{patts}}$
+feature matrix $F$ is full rank (and only for $N_{\mathrm{patts}} \le N_F$) -- a precondition they
+satisfy by explicit assumption (``the patterns being stored in the feature layer are random
+binary $\{-1,1\}$ patterns, and hence the matrix $F$ will be full rank'' \cite{sharma2022}), not
+by testing what happens when it fails. Real, correlated images are exactly the case their
+assumption sets aside: MNIST's effective rank saturates at ${\sim}600$--$610$ regardless of $M$,
+never reaching full rank at any $M$ we tested. The ceiling identified above is, in this sense, an
+empirical demonstration of the regime immediately outside MESH's own Theorem 5.1 -- not a failure
+of the pseudo-inverse rule in the abstract, but a direct consequence of asking it to satisfy a
+precondition real image statistics do not provide. (Their Theorem 5.3, for the complementary
+regime $N_{\mathrm{patts}} > N_H$ in the opposite heteroassociative direction, gives its own
+explicit graceful-degradation quantity -- average overlap $N_H/N_{\mathrm{patts}}$ -- which is
+rank-independent, since it assumes the scaffold side has already been correctly reconstructed.)
+
 Does the ridge value that fixes $M{=}500$ keep working, or does $\lambda$ need to keep growing
 with $M$? We extended the sweep to $M{=}2500$--$4000$ across $\lambda\in\{1,10,50,100\}$:
 
