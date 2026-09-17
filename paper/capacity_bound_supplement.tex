@@ -586,28 +586,84 @@ capacity \cite{ags1987}. Kanerva's original capacity analysis for sparse distrib
 binary code, also analyzed via combinatorial (there, Hamming-ball volume) arguments -- though
 via a different geometric route than the hypergeometric-overlap statistics used here.
 
-\section{Appendix: An independent derivation of MESH's heteroassociative overlap formula}
+\section{Appendix: An independent derivation of MESH's heteroassociative theorems}
 \label{sec:mesh-derivation}
 
-Section 4.5 of the main paper ties an empirically measured capacity ceiling to a specific
-published result, MESH's Theorem 5.3 \cite{sharma2022}: for $N_{\mathrm{patts}} > N_H$
-stored patterns, pseudoinverse-learned heteroassociation from the hidden (scaffold) layer to the
-feature layer gives partial reconstruction, with the dot product between each stored feature
-pattern and its (pre-sign-nonlinearity) reconstruction equal to $N_H/N_{\mathrm{patts}}$,
-averaged across patterns. We derive this independently here, from elementary linear algebra and
-one distributional assumption, rather than only citing it.
+Section 4.5 of the main paper ties an empirically measured capacity ceiling to two specific
+published results, MESH's Theorems 5.1 and 5.3 \cite{sharma2022}, governing the two directions of
+pseudoinverse-learned heteroassociation between the scaffold's hidden layer and an arbitrary
+feature (content) layer. We derive both independently here, from elementary linear algebra, rather
+than only citing them -- and show they are the same fact, $M^+M$ acting as either the identity or
+a projector depending on which side of a rank comparison $M$ sits, applied to the two different
+matrices ($F$, then $H$) that appear in the two heteroassociative directions.
 
 \paragraph{Setup.} Let $H\in\mathbb{R}^{N_H\times N_{\mathrm{patts}}}$ have columns $h^\mu$,
 $\mu=1,\dots,N_{\mathrm{patts}}$, the scaffold's predefined hidden-layer states, and let
 $F\in\mathbb{R}^{N_F\times N_{\mathrm{patts}}}$ have columns $f^\mu$, the arbitrary content
-patterns heteroassociated with them. Assume: (i) $N_{\mathrm{patts}}>N_H$ and $H$ has full row
-rank $N_H$ (guaranteed for the scaffold's own predefined states by construction
-\cite{sharma2022}, independent of $F$); (ii) the columns $f^\mu$ are independent, zero-mean, and
-each satisfies $(f^\mu)^\top f^\mu=N_F$ exactly (e.g.\ i.i.d.\ random $\{-1,1\}$ patterns), and
-are independent of $H$. Heteroassociative pseudoinverse learning sets $W_{FH}=FH^+$, and
-presenting the exact hidden state $h^\mu$ recovers $\hat f^\mu = W_{FH}h^\mu = FH^+h^\mu$.
+patterns heteroassociated with them. Heteroassociative pseudoinverse learning sets
+$W_{HF}=HF^+$ (feature$\to$hidden) and $W_{FH}=FH^+$ (hidden$\to$feature).
 
-\begin{proposition}[MESH's heteroassociative overlap formula, re-derived]
+\begin{lemma}[The pseudo-inverse ``hat'' matrix is the identity or a projector]
+\label{lem:pinv-hat}
+Let $M\in\mathbb{R}^{a\times b}$.
+\begin{enumerate}
+\item[(a)] If $M$ has full column rank ($\mathrm{rank}(M)=b\le a$), then $M^+M = I_b$, exactly.
+\item[(b)] If $M$ has full row rank ($\mathrm{rank}(M)=a\le b$), then $P:=M^+M$ is the orthogonal
+projector onto the row space of $M$, with $\mathrm{rank}(P)=a$; in particular $P=I_b$ only if
+$a=b$, and otherwise $P\ne I_b$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) Full column rank gives the left pseudo-inverse $M^+=(M^\top M)^{-1}M^\top$ ($M^\top M$
+invertible since it is $b\times b$ of rank $b$), so $M^+M = (M^\top M)^{-1}M^\top M = I_b$.
+(b) Full row rank gives the right pseudo-inverse $M^+=M^\top(MM^\top)^{-1}$ ($MM^\top$ invertible
+since it is $a\times a$ of rank $a$), so $P:=M^+M = M^\top(MM^\top)^{-1}M$ is symmetric
+($P^\top=M^\top((MM^\top)^{-1})^\top M = P$, since $MM^\top$ is symmetric) and idempotent
+($P^2=M^\top(MM^\top)^{-1}(MM^\top)(MM^\top)^{-1}M=P$), hence an orthogonal projector, with
+$\mathrm{rank}(P)=\mathrm{rank}(M)=a$. If $a<b$, $P$ is a rank-$a$ projector on
+$\mathbb{R}^b$ and cannot equal $I_b$ (rank $b$).
+\end{proof}
+
+\subsection{Theorem 5.1, re-derived: exact recovery when $N_{\mathrm{patts}}\le N_F$}
+
+MESH's Theorem 5.1 states that if $F$ is full rank, an input of clean feature vectors perfectly
+reconstructs the hidden layer states through pseudoinverse heteroassociation, provided
+$N_{\mathrm{patts}}\le N_F$ -- exactly the regime in which $F$ (an $N_F\times N_{\mathrm{patts}}$
+matrix) can have full \emph{column} rank $N_{\mathrm{patts}}$.
+
+\begin{proposition}[MESH's Theorem 5.1, re-derived]
+\label{prop:mesh-thm51}
+If $F$ has full column rank $N_{\mathrm{patts}}$ (possible since $N_{\mathrm{patts}}\le N_F$),
+then presenting the clean feature vector $f^\mu$ recovers the hidden state exactly:
+$\hat h^\mu := W_{HF}f^\mu = h^\mu$, for every $\mu$.
+\end{proposition}
+
+\begin{proof}
+Writing $f^\mu=Fe_\mu$, Lemma~\ref{lem:pinv-hat}(a) applied to $F$ gives $F^+F=I_{N_{\mathrm{patts}}}$,
+so
+\[
+\hat h^\mu = W_{HF}f^\mu = HF^+Fe_\mu = H\,I_{N_{\mathrm{patts}}}\,e_\mu = He_\mu = h^\mu.
+\]
+\end{proof}
+
+Unlike Theorem 5.3 below, this is an exact deterministic identity, not an expectation: it requires
+no distributional assumption on $F$ or $H$ at all beyond $F$'s rank, and holds for every stored
+pattern individually, not merely on average. We verified it numerically (random Gaussian $F$ and
+$H$) across four $(N_F,N_{\mathrm{patts}},N_H)$ triples spanning an order of magnitude in each
+dimension; the maximum reconstruction error was at floating-point precision
+($\le 2\times10^{-12}$) in every case, exactly as the exact identity predicts.
+
+\subsection{Theorem 5.3, re-derived: partial recovery when $N_{\mathrm{patts}}>N_H$}
+
+The complementary regime reverses which matrix supplies the rank condition and which supplies the
+randomness. Assume: (i) $N_{\mathrm{patts}}>N_H$ and $H$ has full row rank $N_H$ (guaranteed for
+the scaffold's own predefined states by construction \cite{sharma2022}, independent of $F$); (ii)
+the columns $f^\mu$ are independent, zero-mean, and each satisfies $(f^\mu)^\top f^\mu=N_F$
+exactly (e.g.\ i.i.d.\ random $\{-1,1\}$ patterns), and are independent of $H$. Presenting the
+exact hidden state $h^\mu$ recovers $\hat f^\mu = W_{FH}h^\mu = FH^+h^\mu$.
+
+\begin{proposition}[MESH's Theorem 5.3, re-derived]
 \label{prop:mesh-rederived}
 Under assumptions (i)--(ii),
 \[
@@ -617,21 +673,10 @@ Under assumptions (i)--(ii),
 \end{proposition}
 
 \begin{proof}
-Since $H$ has full row rank, its right pseudo-inverse is $H^+=H^\top(HH^\top)^{-1}$, satisfying
-$HH^+=I_{N_H}$. Writing $h^\mu=He_\mu$ ($e_\mu$ the $\mu$-th standard basis vector of
-$\mathbb{R}^{N_{\mathrm{patts}}}$),
-\[
-\hat f^\mu = FH^+He_\mu = Fc^\mu, \qquad c^\mu := Pe_\mu, \qquad P:=H^+H\in\mathbb{R}^{N_{\mathrm{patts}}\times N_{\mathrm{patts}}}.
-\]
-$P$ is the orthogonal projector onto the row space of $H$: symmetric and idempotent, since $HH^\top$
-is symmetric,
-\[
-P^\top = H^\top\big((HH^\top)^{-1}\big)^\top H = H^\top(HH^\top)^{-1}H = P, \qquad
-P^2 = H^\top(HH^\top)^{-1}\big(HH^\top(HH^\top)^{-1}\big)H = P,
-\]
-with $\mathrm{rank}(P)=\mathrm{rank}(H)=N_H$. The vector $c^\mu$ is column $\mu$ of $P$, so its own
-$\mu$-th entry is the diagonal element $c^\mu_\mu = P_{\mu\mu}$. Expanding the reconstruction over
-the pattern basis,
+Writing $h^\mu=He_\mu$, Lemma~\ref{lem:pinv-hat}(b) applied to $H$ gives $\hat f^\mu = FH^+He_\mu =
+Fc^\mu$ where $c^\mu:=Pe_\mu$ and $P:=H^+H$ is the rank-$N_H$ orthogonal projector onto $H$'s row
+space. The vector $c^\mu$ is column $\mu$ of $P$, so its own $\mu$-th entry is the diagonal
+element $c^\mu_\mu=P_{\mu\mu}$. Expanding the reconstruction over the pattern basis,
 \[
 \hat f^\mu = \sum_{\nu=1}^{N_{\mathrm{patts}}} c^\mu_\nu f^\nu = c^\mu_\mu f^\mu + \sum_{\nu\ne\mu} c^\mu_\nu f^\nu,
 \]
@@ -648,22 +693,26 @@ orthogonal projector, so its eigenvalues are all $0$ or $1$ and its trace equals
 $\mathrm{tr}(P)=\mathrm{rank}(P)=N_H$. Hence the average equals $N_H/N_{\mathrm{patts}}$.
 \end{proof}
 
-We verified Proposition~\ref{prop:mesh-rederived} numerically (random Gaussian $H$, i.i.d.\
-$\{-1,1\}$ columns for $F$) across four $(N_H,N_{\mathrm{patts}},N_F)$ triples spanning an order
-of magnitude in each dimension; measured and predicted overlap agreed to at least three decimal
-places in every case (e.g.\ $N_H{=}150$, $N_{\mathrm{patts}}{=}1000$: measured $0.1500$ vs.\
-predicted $0.1500$).
+We verified this numerically too (random Gaussian $H$, i.i.d.\ $\{-1,1\}$ columns for $F$) across
+four $(N_H,N_{\mathrm{patts}},N_F)$ triples spanning an order of magnitude in each dimension;
+measured and predicted overlap agreed to at least three decimal places in every case (e.g.\
+$N_H{=}150$, $N_{\mathrm{patts}}{=}1000$: measured $0.1500$ vs.\ predicted $0.1500$).
 
-\paragraph{Discussion.} The result depends on $H$ only through its rank, via $\mathrm{tr}(P)=N_H$
--- not on any property of $F$ beyond assumption (ii)'s independence and normalization. This is why
-Theorem 5.3, unlike MESH's Theorem 5.1 (Section 4.5 of the main paper), requires no full-rank
-assumption on the \emph{content} matrix $F$: the ceiling here is set entirely by the scaffold side
-($N_H$ relative to $N_{\mathrm{patts}}$), and the content patterns need only be independent and
-appropriately normalized. Between the two theorems, MESH's own heteroassociation theory covers
-both directions in which a pseudoinverse-learned heteroassociative map can be starved of rank: too
-few scaffold dimensions relative to the number of patterns (Theorem 5.3, re-derived here), or too
-little independent information in the content itself (Theorem 5.1, violated by real images in
-Section 4.5 of the main paper).
+\paragraph{Discussion.} Both theorems are corollaries of Lemma~\ref{lem:pinv-hat} applied to
+different matrices. Theorem 5.1 needs $F$ full column rank ($N_{\mathrm{patts}}\le N_F$) and gets
+back case (a) -- the hat matrix is the identity, so recovery is exact and deterministic, with no
+distributional assumption on either $F$ or $H$ needed at all. Theorem 5.3 needs $H$ full row rank
+($N_{\mathrm{patts}}>N_H$, guaranteed by the scaffold's own construction) and gets back case (b)
+-- the hat matrix is a rank-deficient projector, so recovery is only partial \emph{on average},
+and only under an added independence assumption on $F$ (needed here specifically to make the
+projector's off-diagonal action on unrelated patterns cancel in expectation, since $P\ne I$ leaves
+no exact identity to fall back on). This is also exactly why Theorem 5.3, unlike Theorem 5.1,
+places no full-rank requirement on the \emph{content} matrix $F$: the ceiling is set entirely by
+$H$'s rank relative to $N_{\mathrm{patts}}$. Between the two theorems, MESH's own heteroassociation
+theory therefore covers both directions in which a pseudoinverse-learned heteroassociative map can
+be starved of rank: too few scaffold dimensions relative to the number of patterns (Theorem 5.3),
+or too little independent information in the content itself (Theorem 5.1, violated by real images
+in Section 4.5 of the main paper).
 
 \begin{thebibliography}{99}
 
