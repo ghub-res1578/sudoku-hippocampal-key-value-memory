@@ -714,6 +714,96 @@ be starved of rank: too few scaffold dimensions relative to the number of patter
 or too little independent information in the content itself (Theorem 5.1, violated by real images
 in Section 4.5 of the main paper).
 
+\subsection{Why the same linear algebra looks catastrophic in Hopfield but graceful in MESH and
+our own architecture}
+\label{sec:catastrophic-vs-graceful}
+
+Section 4.6 of the main paper reports that pseudo-inverse (projection-rule) Hopfield is
+``algebraically exact at zero noise'' yet has basins of attraction that ``shrink so fast under
+even modest noise'' that recall crashes from $100\%$ to $0\%$ within a narrow range of $M$. We now
+show this is not a separate empirical curiosity but a direct, provable consequence of the same
+pseudo-inverse machinery above, applied to \emph{auto}-association instead of heteroassociation --
+and that it is this specific consequence, not the pseudo-inverse rule in the abstract, that MESH's
+scaffold and our own architecture avoid.
+
+\paragraph{Setup.} The classical projection-rule (pseudo-inverse) Hopfield weight matrix is
+\[
+W = X(X^\top X)^+X^\top \;\in\; \mathbb{R}^{N\times N},
+\]
+the orthogonal projector onto the column space of the stored-pattern matrix
+$X\in\mathbb{R}^{N\times M}$ (columns $x^\mu$).
+
+\begin{proposition}[Clean recall is always exact; noise correction is not]
+\label{prop:hopfield-wall}
+For every stored pattern, $Wx^\mu = x^\mu$ exactly, at any $M$. For a noisy cue
+$\tilde x=x^\mu+n$, the reconstructed state is $W\tilde x = x^\mu + Wn$, and the expected fraction
+of noise energy \emph{removed} by this single linear pass, for isotropic random noise $n$, is
+\[
+\frac{\mathbb{E}\big[\|(I-W)n\|^2\big]}{\|n\|^2} \;=\; \frac{N-\mathrm{rank}(X)}{N} \;=\; \max\!\Big(0,\ 1-\frac{M}{N}\Big),
+\]
+which reaches exactly zero once $M\ge N$ and remains exactly zero for every $M>N$ thereafter.
+\end{proposition}
+
+\begin{proof}
+Since $x^\mu=Xe_\mu\in\mathrm{col}(X)$ trivially, and $W$ is by construction the orthogonal
+projector onto $\mathrm{col}(X)$, $Wx^\mu=x^\mu$ exactly -- clean recall never degrades with $M$,
+unlike heteroassociation's averaged overlap (Propositions~\ref{prop:mesh-thm51}--\ref{prop:mesh-rederived}).
+For the noise term: $W$ and $I-W$ are complementary orthogonal projectors ($W(I-W)=0$), of ranks
+$\mathrm{rank}(X)$ and $N-\mathrm{rank}(X)$ respectively, so by the Pythagorean identity
+$\|n\|^2=\|Wn\|^2+\|(I-W)n\|^2$ for every $n$. For an isotropic random unit vector $n$, the
+expected squared norm of its projection onto a fixed rank-$r$ subspace is $r/N$ (by symmetry,
+each of $N$ orthogonal directions captures expected energy $1/N$); applying this to $I-W$
+(rank $N-\mathrm{rank}(X)$) gives $\mathbb{E}[\|(I-W)n\|^2]=(N-\mathrm{rank}(X))/N$. Generic random
+patterns give $\mathrm{rank}(X)=\min(M,N)$, so this is $\max(0,1-M/N)$, and since rank cannot
+exceed $N$, it is \emph{exactly} zero, not merely small, for every $M\ge N$.
+\end{proof}
+
+We verified Proposition~\ref{prop:hopfield-wall} numerically (i.i.d.\ $\{-1,1\}$ patterns,
+$N{=}500$, isotropic Gaussian noise): removed-noise fraction $0.8006$ ($M{=}100$, predicted
+$0.8000$), $0.3884$ ($M{=}300$, predicted $0.4000$), and exactly $0.0000$ for every
+$M\in\{500,600,1000\}$ tested, against a predicted floor of exactly $0$ once $M\ge N$.
+
+\paragraph{The mathematical root of the asymmetry.} Auto-association's noise-correction capacity
+and heteroassociation's reconstruction overlap are governed by \emph{different} projector
+quantities. Auto-association's noise correction depends on $\mathrm{rank}(I-W) = N-\mathrm{rank}(X)$
+-- an integer that hits zero exactly at a specific, finite $M$ and cannot go lower, because rank is
+bounded below by zero. Heteroassociation's overlap (Propositions~\ref{prop:mesh-thm51}--\ref{prop:mesh-rederived})
+depends instead on the \emph{average diagonal entry} of a projector, $\mathrm{tr}(P)/N_{\mathrm{patts}}=N_H/N_{\mathrm{patts}}$
+-- a ratio that shrinks smoothly toward, but never exactly reaches, zero at any finite
+$N_{\mathrm{patts}}$, and is provably monotone and convex in the load variable
+(Theorem~\ref{thm:smoothness}, proved for our own architecture's actual capacity-bearing readout;
+MESH's Theorem 4.3 establishes the analogous robustness for its own scaffold, by a different,
+combinatorial argument). One is a hard, deterministic floor reached at a specific point; the other
+is a ratio that only approaches its limit.
+
+\paragraph{Where the catastrophe actually comes from.} Proposition~\ref{prop:hopfield-wall} alone
+would predict only a hard-but-finite wall: at $M=N$ a single linear pass stops helping with noise
+at all, but nothing forces it to get \emph{worse} beyond that point, nor explains sub-100\% recall
+already at $M<N$ under noise. That amplification comes from the auto-associative network's
+recurrent, nonlinear dynamics ($x\to\mathrm{sign}(Wx)$, iterated to a fixed point), whose
+basin-of-attraction structure near this same $M\approx N$ boundary is known, via the classical
+statistical mechanics of Hopfield networks, to undergo its own sharp transition -- the
+Amit--Gutfreund--Sompolinsky storage-capacity analysis and Kanter \& Sompolinsky's projection-rule
+result \cite{ags1987,kanter1987}, already cited in Section 4.6 of the main paper for exactly this
+reason. We do not re-derive that transition here; what Proposition~\ref{prop:hopfield-wall}
+establishes rigorously is the boundary condition feeding into it: the linear noise-correction
+mechanism is provably, exactly exhausted at $M=N$ (or, for real correlated content such as the
+MNIST images of Section 4.5, at the content's own effective rank rather than its nominal
+dimension) -- precisely where that separately-established recurrent instability becomes
+catastrophic rather than merely diminished.
+
+\paragraph{Why MESH and our own architecture do not inherit this wall.} Neither routes an
+imperfect reconstruction back into a same-representation recurrent map built by projecting stored
+patterns onto their own linear span. MESH's scaffold dynamics are a $k$-winners-take-all attractor
+network over a fixed random projection, with basins proven maximally large and stable for
+\emph{every} $N_{\mathrm{patts}}$ up to $\binom{N_L}{k}$ (MESH's Theorem 4.3) regardless of how
+imperfect the heteroassociative step feeding it is. Our own core engram and attention readout
+(Sections 2--3 of the main paper) involve no pseudo-inverse-learned recurrent map at all -- the
+engram is a fixed random projection plus $k$-winners-take-all, and its capacity-bearing quantity
+(Section 2.3, and Theorem~\ref{thm:smoothness} above) is provably smooth and convex with no
+finite-size singularity. Both avoid Proposition~\ref{prop:hopfield-wall}'s wall not by a better
+learning rule, but by never subjecting the capacity-determining step to it in the first place.
+
 \begin{thebibliography}{99}
 
 \bibitem{ramsauer2020} H.~Ramsauer et al., ``Hopfield networks is all you need,'' \textit{arXiv:2008.02217} (2020).
@@ -731,6 +821,8 @@ in Section 4.5 of the main paper).
 \bibitem{gardner1988} E.~Gardner, ``The space of interactions in neural network models,'' \textit{J.\ Phys.\ A} \textbf{21}, 257 (1988).
 
 \bibitem{ags1987} D.~J.~Amit, H.~Gutfreund, H.~Sompolinsky, ``Statistical mechanics of neural networks near saturation,'' \textit{Ann.\ Phys.} \textbf{173}, 30--67 (1987).
+
+\bibitem{kanter1987} I.~Kanter, H.~Sompolinsky, ``Associative recall of memory without errors,'' \textit{Physical Review A} \textbf{35}(1), 380 (1987).
 
 \bibitem{kanerva1988} P.~Kanerva, \textit{Sparse Distributed Memory}, MIT Press (1988).
 
