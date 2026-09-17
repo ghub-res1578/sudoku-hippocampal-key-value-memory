@@ -586,6 +586,85 @@ capacity \cite{ags1987}. Kanerva's original capacity analysis for sparse distrib
 binary code, also analyzed via combinatorial (there, Hamming-ball volume) arguments -- though
 via a different geometric route than the hypergeometric-overlap statistics used here.
 
+\section{Appendix: An independent derivation of MESH's heteroassociative overlap formula}
+\label{sec:mesh-derivation}
+
+Section 4.5 of the main paper ties an empirically measured capacity ceiling to a specific
+published result, MESH's Theorem 5.3 \cite{sharma2022}: for $N_{\mathrm{patts}} > N_H$
+stored patterns, pseudoinverse-learned heteroassociation from the hidden (scaffold) layer to the
+feature layer gives partial reconstruction, with the dot product between each stored feature
+pattern and its (pre-sign-nonlinearity) reconstruction equal to $N_H/N_{\mathrm{patts}}$,
+averaged across patterns. We derive this independently here, from elementary linear algebra and
+one distributional assumption, rather than only citing it.
+
+\paragraph{Setup.} Let $H\in\mathbb{R}^{N_H\times N_{\mathrm{patts}}}$ have columns $h^\mu$,
+$\mu=1,\dots,N_{\mathrm{patts}}$, the scaffold's predefined hidden-layer states, and let
+$F\in\mathbb{R}^{N_F\times N_{\mathrm{patts}}}$ have columns $f^\mu$, the arbitrary content
+patterns heteroassociated with them. Assume: (i) $N_{\mathrm{patts}}>N_H$ and $H$ has full row
+rank $N_H$ (guaranteed for the scaffold's own predefined states by construction
+\cite{sharma2022}, independent of $F$); (ii) the columns $f^\mu$ are independent, zero-mean, and
+each satisfies $(f^\mu)^\top f^\mu=N_F$ exactly (e.g.\ i.i.d.\ random $\{-1,1\}$ patterns), and
+are independent of $H$. Heteroassociative pseudoinverse learning sets $W_{FH}=FH^+$, and
+presenting the exact hidden state $h^\mu$ recovers $\hat f^\mu = W_{FH}h^\mu = FH^+h^\mu$.
+
+\begin{proposition}[MESH's heteroassociative overlap formula, re-derived]
+\label{prop:mesh-rederived}
+Under assumptions (i)--(ii),
+\[
+\frac{1}{N_{\mathrm{patts}}}\sum_{\mu=1}^{N_{\mathrm{patts}}}
+\mathbb{E}\!\left[\frac{(f^\mu)^\top \hat f^\mu}{N_F}\right] \;=\; \frac{N_H}{N_{\mathrm{patts}}}.
+\]
+\end{proposition}
+
+\begin{proof}
+Since $H$ has full row rank, its right pseudo-inverse is $H^+=H^\top(HH^\top)^{-1}$, satisfying
+$HH^+=I_{N_H}$. Writing $h^\mu=He_\mu$ ($e_\mu$ the $\mu$-th standard basis vector of
+$\mathbb{R}^{N_{\mathrm{patts}}}$),
+\[
+\hat f^\mu = FH^+He_\mu = Fc^\mu, \qquad c^\mu := Pe_\mu, \qquad P:=H^+H\in\mathbb{R}^{N_{\mathrm{patts}}\times N_{\mathrm{patts}}}.
+\]
+$P$ is the orthogonal projector onto the row space of $H$: symmetric and idempotent, since $HH^\top$
+is symmetric,
+\[
+P^\top = H^\top\big((HH^\top)^{-1}\big)^\top H = H^\top(HH^\top)^{-1}H = P, \qquad
+P^2 = H^\top(HH^\top)^{-1}\big(HH^\top(HH^\top)^{-1}\big)H = P,
+\]
+with $\mathrm{rank}(P)=\mathrm{rank}(H)=N_H$. The vector $c^\mu$ is column $\mu$ of $P$, so its own
+$\mu$-th entry is the diagonal element $c^\mu_\mu = P_{\mu\mu}$. Expanding the reconstruction over
+the pattern basis,
+\[
+\hat f^\mu = \sum_{\nu=1}^{N_{\mathrm{patts}}} c^\mu_\nu f^\nu = c^\mu_\mu f^\mu + \sum_{\nu\ne\mu} c^\mu_\nu f^\nu,
+\]
+so $(f^\mu)^\top\hat f^\mu = c^\mu_\mu(f^\mu)^\top f^\mu + \sum_{\nu\ne\mu}c^\mu_\nu(f^\mu)^\top f^\nu
+= c^\mu_\mu N_F + \sum_{\nu\ne\mu}c^\mu_\nu(f^\mu)^\top f^\nu$. Taking expectation over $F$ (with
+$H$, hence $c^\mu$, independent of $F$), every cross term $\mathbb{E}[(f^\mu)^\top f^\nu]=0$ for
+$\nu\ne\mu$ by assumption (ii), leaving
+\[
+\mathbb{E}\!\left[\frac{(f^\mu)^\top \hat f^\mu}{N_F}\right] = c^\mu_\mu = P_{\mu\mu}.
+\]
+Averaging over all $N_{\mathrm{patts}}$ patterns,
+$\frac{1}{N_{\mathrm{patts}}}\sum_\mu P_{\mu\mu} = \mathrm{tr}(P)/N_{\mathrm{patts}}$. $P$ is an
+orthogonal projector, so its eigenvalues are all $0$ or $1$ and its trace equals its rank:
+$\mathrm{tr}(P)=\mathrm{rank}(P)=N_H$. Hence the average equals $N_H/N_{\mathrm{patts}}$.
+\end{proof}
+
+We verified Proposition~\ref{prop:mesh-rederived} numerically (random Gaussian $H$, i.i.d.\
+$\{-1,1\}$ columns for $F$) across four $(N_H,N_{\mathrm{patts}},N_F)$ triples spanning an order
+of magnitude in each dimension; measured and predicted overlap agreed to at least three decimal
+places in every case (e.g.\ $N_H{=}150$, $N_{\mathrm{patts}}{=}1000$: measured $0.1500$ vs.\
+predicted $0.1500$).
+
+\paragraph{Discussion.} The result depends on $H$ only through its rank, via $\mathrm{tr}(P)=N_H$
+-- not on any property of $F$ beyond assumption (ii)'s independence and normalization. This is why
+Theorem 5.3, unlike MESH's Theorem 5.1 (Section 4.5 of the main paper), requires no full-rank
+assumption on the \emph{content} matrix $F$: the ceiling here is set entirely by the scaffold side
+($N_H$ relative to $N_{\mathrm{patts}}$), and the content patterns need only be independent and
+appropriately normalized. Between the two theorems, MESH's own heteroassociation theory covers
+both directions in which a pseudoinverse-learned heteroassociative map can be starved of rank: too
+few scaffold dimensions relative to the number of patterns (Theorem 5.3, re-derived here), or too
+little independent information in the content itself (Theorem 5.1, violated by real images in
+Section 4.5 of the main paper).
+
 \begin{thebibliography}{99}
 
 \bibitem{ramsauer2020} H.~Ramsauer et al., ``Hopfield networks is all you need,'' \textit{arXiv:2008.02217} (2020).
@@ -605,6 +684,9 @@ via a different geometric route than the hypergeometric-overlap statistics used 
 \bibitem{ags1987} D.~J.~Amit, H.~Gutfreund, H.~Sompolinsky, ``Statistical mechanics of neural networks near saturation,'' \textit{Ann.\ Phys.} \textbf{173}, 30--67 (1987).
 
 \bibitem{kanerva1988} P.~Kanerva, \textit{Sparse Distributed Memory}, MIT Press (1988).
+
+\bibitem{sharma2022} S.~Sharma, S.~Chandra, I.~Fiete, ``Content addressable memory without
+catastrophic forgetting by heteroassociation with a fixed scaffold,'' \textit{ICML} (2022).
 
 \end{thebibliography}
 
