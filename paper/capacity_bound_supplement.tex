@@ -368,11 +368,16 @@ each a weighted average, with at least one strictly positive weight, of terms th
 negative (respectively all strictly positive).
 \end{proof}
 
-\noindent\textbf{Interpretation.} Theorem~\ref{thm:smoothness} rules out, at the level of the exact
-model, any finite-$M$ point at which retrieval probability could drop discontinuously or bend toward
-an accelerating collapse: $P_{\mathrm{ret}}$ can only \emph{decelerate} as $M$ grows (convexity), on
-top of always decreasing (monotonicity) -- graceful, non-catastrophic degradation, now proven rather
-than only observed in simulation (Section~\ref{sec:exacttail-validation}). This is a property specific
+\noindent\textbf{Interpretation.} The precise claim is \emph{no finite-$M$ singularity}, not
+\emph{no cliff} in every informal sense of the word: Theorem~\ref{thm:smoothness} rules out, at the
+level of the exact model, any finite-$M$ point at which retrieval probability drops
+discontinuously or bends toward an accelerating collapse -- $P_{\mathrm{ret}}$ can only
+\emph{decelerate} as $M$ grows (convexity), on top of always decreasing (monotonicity). It does
+not, by itself, rule out $P_{\mathrm{ret}}$ falling steeply over a narrow range of $M$ while
+remaining continuous and convex throughout; Section~\ref{sec:outlook} shows such steepness can in
+fact become asymptotically sharp under exponential-in-$H$ storage. What is proven here is the
+absence of a true discontinuity or accelerating (non-convex) collapse at any finite size, now
+established rather than only observed in simulation (Section~\ref{sec:exacttail-validation}). This is a property specific
 to the \emph{explicit-key} retrieval mechanism analyzed throughout this note: failure accumulates from
 more chances for some one unrelated stored key to accidentally resemble the query, not from the
 appearance or disappearance of a dynamical attractor -- the latter being the mechanism behind a
@@ -556,12 +561,6 @@ fixed,
 \[
 I(x;\kappa,\rho) \;:=\; h(\rho) \;-\; \kappa\,h\!\left(\frac{x}{\kappa}\right) \;-\; (1-\kappa)\,h\!\left(\frac{\rho-x}{1-\kappa}\right).
 \]
-Substituting $\kappa=\rho(1-2\eta)+\eta$ and $x=\rho(1-\eta)$ (so $\rho-x=\rho\eta$) gives the rate
-function for our specific corrupted-query problem:
-\begin{equation}
-I(\eta,\rho) \;=\; h(\rho) \;-\; \kappa\,h\!\left(\frac{\rho(1-\eta)}{\kappa}\right) \;-\; (1-\kappa)\,h\!\left(\frac{\rho\eta}{1-\kappa}\right), \qquad \kappa=\rho(1-2\eta)+\eta.
-\label{eq:rateformula}
-\end{equation}
 \end{proposition}
 
 \begin{proof}
@@ -577,59 +576,128 @@ $-\frac1H\ln\Pr[X=xH]$, giving $I(x;\kappa,\rho)$ as stated (the number of terms
 polynomial in $H$ and does not affect the exponential rate).
 \end{proof}
 
-We verified Equation~\ref{eq:rateformula} numerically against the exact hypergeometric tail,
-computed via \texttt{scipy.stats.\allowbreak hypergeom.\allowbreak logsf} at several corruption
-levels and densities over a $100\times$ range of $H$. The exact $-\frac1H\ln\Pr[X\ge xH]$ converges
-monotonically to the
-predicted $I(\eta,\rho)$ as $H$ grows -- for instance at $\eta{=}0.30$, $\rho{=}0.15$, the exact
-value moves $0.04487\to0.04318\to0.04274\to0.04260$ as $H$ runs $10^3,5{\times}10^3,2{\times}10^4,10^5$,
-against a predicted limit of $0.04255$. The boundary case $\eta\to0$ recovers $I(0,\rho)=h(\rho)$
-exactly, matching the elementary fact that a competitor's overlap can equal a noise-free query's
-own similarity only by exactly reproducing the true key ($\Pr=1/\binom{H}{K}$).
+\subsection{Why substituting the typical corruption realization is not enough}
+\label{sec:typical-r-pitfall}
 
-\subsection{The phase boundary and the critical corruption threshold}
+Substituting the \emph{typical} corruption level $r=\eta K$ into $\kappa=\rho(1-2\eta)+\eta$,
+$x=\rho(1-\eta)$ gives a candidate rate
+\begin{equation}
+I_{\mathrm{typical}}(\eta,\rho) \;:=\; h(\rho) - \kappa\,h\!\left(\frac{\rho(1-\eta)}{\kappa}\right) - (1-\kappa)\,h\!\left(\frac{\rho\eta}{1-\kappa}\right), \qquad \kappa=\rho(1-2\eta)+\eta,
+\label{eq:rate-typical}
+\end{equation}
+which an earlier version of this note used directly as $I(\eta,\rho)$. This is the same error
+Section~\ref{sec:exacttail-pitfall} already diagnosed and corrected at the level of the exact,
+finite-$H$ formula: $R$ is itself random, and $\kappa$, $x$ are both deterministic functions of
+the \emph{same} realization of $R$, not independently free to be set at their unconditional means.
+At the level of a large-deviation \emph{rate}, this substitution is not merely imprecise but
+asymptotically wrong: it ignores that an \emph{atypical} realization of $R$ -- individually rare,
+at its own exponential cost -- can make the resulting tail event cheaper overall than the typical
+realization does, and the true asymptotic rate is governed by the cheapest such path, not the
+typical one. Since atypical paths can only lower the total cost, $I_{\mathrm{typical}}(\eta,\rho)$
+is provably an \emph{overestimate} of the true rate -- optimistic, not conservative, about how much
+corruption can be tolerated.
 
-If the number of stored memories scales exponentially with $H$, $M=\exp(\alpha H)$, substituting
-Equation~\ref{eq:rateformula} into $P_{\mathrm{ret}}\approx[1-p_H(\eta,\rho)]^{M-1}\approx
-\exp[-(M-1)p_H(\eta,\rho)]$ (the small-tail approximation above) gives, to leading order,
+\subsection{The correct rate: a large-deviation contraction over the corruption realization}
+\label{sec:corrected-rate}
+
+$R\sim\mathrm{Hypergeometric}(H,K,\eta H)$ obeys the same large-deviation principle as
+Proposition~\ref{prop:ratefunction}, applied to $R$ itself: writing $x_R:=r/H$, population fraction
+$\rho$ (true-active bits) and sample fraction $\eta$ (flipped positions),
+\[
+-\tfrac1H\ln\Pr[R=x_R H] \;\longrightarrow\; I_R(x_R) \;:=\; I(x_R;\rho,\eta).
+\]
+Conditional on a realized $x_R$, the tail rate from Proposition~\ref{prop:ratefunction} (now with
+the \emph{realized}, not typical, query activity $\kappa(x_R)=\rho+\eta-2x_R$ and true similarity
+$x(x_R)=\rho-x_R$) is $I_{\mathrm{tail}}(x_R) := I\big(\rho-x_R;\ \rho+\eta-2x_R,\ \rho\big)$.
+
+\begin{proposition}[Corrected large-deviation rate, via contraction]
+\label{prop:corrected-rate}
+\[
+I(\eta,\rho) \;:=\; \min_{x_R \in [\max(0,\rho+\eta-1),\ \min(\rho,\eta)]} \Big[\, I_R(x_R) + I_{\mathrm{tail}}(x_R) \,\Big]
+\]
+is the correct asymptotic rate: $-\tfrac1H\ln\bar P(\eta) \to I(\eta,\rho)$ as $H\to\infty$, where
+$\bar P(\eta)=\mathbb{E}_R\big[p_{k(R)}(s(R))\big]$ is the exact, already-correctly-averaged
+quantity of Section~\ref{sec:exacttail-pitfall}. Since $I_R(x_R)\ge0$ everywhere and
+$I_R(\rho\eta)=0$ at the typical value, $I(\eta,\rho) \le I_{\mathrm{typical}}(\eta,\rho)$ always,
+with equality only if the typical realization happens to minimize the bracketed sum.
+\end{proposition}
+
+\begin{proof}[Justification]
+This is the standard large-deviations contraction/Varadhan argument. Recall
+\[
+\bar P(\eta) \;=\; \sum_r \Pr(R=r)\,p_{k(r)}(s(r))
+\]
+is a sum of $H{+}1$ exponentially-scaled terms, each
+$\approx\exp\{-H[I_R(x_R)+I_{\mathrm{tail}}(x_R)]\}$. A sum of exponentially many
+exponentially-scaled terms is dominated, to leading exponential order, by its largest (cheapest)
+term -- the $x_R$ minimizing the bracketed total cost -- since the number of terms summed is only
+polynomial in $H$ and does not affect the exponential rate, exactly as in the proof of
+Proposition~\ref{prop:ratefunction}.
+\end{proof}
+
+We verified Proposition~\ref{prop:corrected-rate} directly by computing the exact $\bar P(\eta)$
+(via \texttt{scipy.stats.\allowbreak hypergeom}, summing over all realizable $r$ exactly, with no
+approximation) at $\rho=0.15$ across a $250\times$ range of $H$. The exact rate
+$-\tfrac1H\ln\bar P(\eta)$ converges cleanly to the corrected $I(\eta,\rho)$ and \emph{away from}
+$I_{\mathrm{typical}}(\eta,\rho)$:
+
+\begin{center}
+\begin{tabular}{cccccc}
+\toprule
+$H$ & $500$ & $2{\times}10^3$ & $8{\times}10^3$ & $3.2{\times}10^4$ & $1.28{\times}10^5$ \\
+\midrule
+$-\tfrac1H\ln\bar P(0.30)$ & $0.03417$ & $0.03139$ & $0.03044$ & $0.03014$ & $0.03005$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent converging to the corrected $I(0.30,0.15)=0.03001$ -- not to
+$I_{\mathrm{typical}}(0.30,0.15)=0.04255$, which this convergence rules out decisively. The same
+pattern holds at $\eta=0.20$ ($I=0.07721$ vs.\ $I_{\mathrm{typical}}=0.10175$) and $\eta=0.40$
+($I=0.00700$ vs.\ $I_{\mathrm{typical}}=0.01030$). The boundary case $\eta\to0$ still recovers
+$I(0,\rho)=h(\rho)$ exactly: at $\eta=0$, $R\equiv0$ deterministically, so the contraction is
+vacuous and both formulas coincide.
+
+\subsection{The corrected phase boundary and critical corruption threshold}
+
+If the number of stored memories scales exponentially with $H$, $M=\exp(\alpha H)$, the same
+substitution as before, now using the corrected rate, gives
 \begin{equation}
 P_{\mathrm{ret}} \;\approx\; \exp\Big\{-\exp\big[H\big(\alpha-I(\eta,\rho)\big)\big]\Big\},
 \label{eq:doubleexp}
 \end{equation}
-a sharp threshold exactly at $\alpha=I(\eta,\rho)$: $P_{\mathrm{ret}}\to1$ as $H\to\infty$ if
-$\alpha<I(\eta,\rho)$, and $P_{\mathrm{ret}}\to0$ if $\alpha>I(\eta,\rho)$. Equivalently, fixing the
-exponential storage rate $\alpha$ and density $\rho$, there is a critical corruption level
+a sharp threshold exactly at $\alpha=I(\eta,\rho)$, and a critical corruption level
 \begin{equation}
-\eta_c(\alpha,\rho) \;:=\; \text{the unique root of } I(\eta,\rho)=\alpha \text{ in } \eta,
+\eta_c(\alpha,\rho) \;:=\; \text{the unique root of } I(\eta,\rho)=\alpha \text{ in } \eta \in (0,\tfrac12),
 \label{eq:etac}
 \end{equation}
-well-defined because $I(\eta,\rho)$ decreases strictly and monotonically from $I(0,\rho)=h(\rho)$
-toward $0$ as $\eta\to\tfrac12$ (verified numerically: at $\rho{=}0.15$,
-$I=0.280,0.202,0.102,0.043,0.010,0.003,0.0001$ at $\eta=0.05,0.10,0.20,0.30,0.40,0.45,0.49$
-respectively). Equation~\ref{eq:etac} has no closed form but is cheap to solve numerically
-(bisection on $\eta\in(0,\tfrac12)$):
+solved numerically (bisection; $I(\eta,\rho)$ decreases strictly from $I(0,\rho)=h(\rho)$ toward
+$0$ as $\eta\to\tfrac12$, verified numerically at $\rho{=}0.15$):
 
 \begin{center}
 \begin{tabular}{ccccccc}
 \toprule
 $\rho$ & $\alpha{=}0.20$ & $0.10$ & $0.05$ & $0.02$ & $0.01$ & $0.005$ \\
 \midrule
-$0.10$ & $0.054$ & $0.156$ & $0.246$ & $0.336$ & $0.383$ & $0.417$ \\
-$0.15$ & $0.101$ & $0.202$ & $0.284$ & $0.361$ & $0.402$ & $0.430$ \\
-$0.30$ & $0.171$ & $0.262$ & $0.330$ & $0.391$ & $0.423$ & $0.446$ \\
+$0.10$ & $0.040$ & $0.117$ & $0.200$ & $0.297$ & $0.353$ & $0.395$ \\
+$0.15$ & $0.082$ & $0.169$ & $0.249$ & $0.334$ & $0.381$ & $0.415$ \\
+$0.30$ & $0.162$ & $0.251$ & $0.319$ & $0.384$ & $0.417$ & $0.441$ \\
 \bottomrule
 \end{tabular}
 \end{center}
-\noindent(Table: $\eta_c(\alpha,\rho)$, i.e.\ the largest corruption level at which storing
-$e^{\alpha H}$ memories remains reliable as $H\to\infty$.) As expected, $\eta_c$ falls as $\alpha$
-grows (storing exponentially more memories tolerates less corruption) and rises with $\rho$ (a
-denser code carries more redundancy per corrupted bit).
+\noindent(Table: corrected $\eta_c(\alpha,\rho)$, i.e.\ the largest corruption level at which
+storing $e^{\alpha H}$ memories remains reliable as $H\to\infty$. Every entry is smaller than the
+corresponding $I_{\mathrm{typical}}$-based value an earlier version of this note reported --
+e.g.\ $\rho{=}0.15,\alpha{=}0.10$: $0.169$ here vs.\ $0.202$ before -- consistent with
+Proposition~\ref{prop:corrected-rate}'s guarantee that the correction can only tighten, never
+loosen, the threshold.) As before, $\eta_c$ falls as $\alpha$ grows and rises with $\rho$.
 
 This is not a contradiction of Theorem~\ref{thm:smoothness}: a finite-$H$ curve that is provably
 smooth and convex at every finite size can still become arbitrarily sharp in a singular joint
 limit. Both are correct simultaneously: \emph{no finite-size attractor-collapse cliff} (proven,
 Theorem~\ref{thm:smoothness}) and \emph{a genuine sharp asymptotic phase boundary at
-$\eta_c(\alpha,\rho)$} (now also proven, Equation~\ref{eq:etac}) under exponential-in-$H$ storage.
+$\eta_c(\alpha,\rho)$} (proven, Equation~\ref{eq:etac}, now correctly accounting for the full
+randomness of the corruption realization rather than only its typical value) under
+exponential-in-$H$ storage.
 
 \section{Relation to the wider literature}
 
@@ -900,16 +968,27 @@ consequence of $Z_\nu$ having a nonzero mean ($K\pi>0$) that survives being squa
 structurally different from our own hypergeometric competitor-overlap variance
 (Equation~\ref{eq:muother}), whose finite-population correction keeps it linear in the relevant
 scale. Consequently, a sum of $M-1$ such crosstalk terms is governed by the ordinary \emph{central
-limit theorem}, not a large-deviation rate: we verified this directly, both against the exact
-compound distribution and against Monte Carlo simulation of the full SDM write/read mechanism,
-finding the Gaussian tail prediction $\Phi\big(-K/\sqrt{(M-1)\,\mathrm{Var}(Z\epsilon)}\big)$
-matches simulated single-bit failure probability closely across $M\in\{50,\dots,800\}$ (e.g.\
-$0.0242$ simulated vs.\ $0.0214$ predicted at $M{=}50$; $0.3113$ vs.\ $0.3063$ at $M{=}800$).
-Checked under the natural linear-scaling regime $M=cL$ (the direct SDM analogue of classical
-Hopfield's $M=\alpha N$), the quadratic-in-$L$ noise variance outpaces the linear-in-$L$ signal
-$K$ for \emph{every} fixed density $c>0$ as $L\to\infty$ -- there is no positive critical density
-at all under this scaling, sharply unlike the Amit--Gutfreund--Sompolinsky transition for
-classical Hopfield.
+limit theorem}, not a large-deviation rate, \emph{provided} the modeling step above -- treating
+$Z_\nu\mid K$ as Binomial and $\epsilon_\nu$ as an independent sign -- is itself accurate.
+
+That step is not automatic and deserves its own check rather than an unstated assumption: $Z_\nu$
+(how many of the query's activated locations $x^\nu$ also activates) and the per-coordinate sign
+$\epsilon_{\nu,i}=x^\nu_i x^\mu_i$ are both functions of the \emph{same} random pattern $x^\nu$, so
+treating them as independent needs justification, not assertion. The dependence is genuine but
+provably weak: coordinate $i$'s contribution to $x^\nu$'s dot product with any fixed hard location
+is one of $d$ roughly-equal-variance terms, so the correlation between $Z_\nu$ and
+$\epsilon_{\nu,i}$ is $O(1/\sqrt d)$, vanishing as $d\to\infty$. Rather than rely on this asymptotic
+argument alone, we verified the Gaussian-tail prediction against a direct simulation of the
+\emph{actual} mechanism -- real random hard locations, real random patterns, real activation and
+counter-sum-then-threshold readout, with no distributional assumption imposed -- at
+$L{=}2000$, $d{=}200$, $\gamma{=}0.42$ ($K\approx28$): predicted vs.\ true-mechanism single-bit
+failure rate agreed closely across $M\in\{20,\dots,400\}$ (e.g.\ $0.0001$ predicted vs.\ $0.0002$
+true at $M{=}100$; $0.0284$ vs.\ $0.0196$ at $M{=}400$), confirming the CLT conclusion survives
+contact with the real mechanism rather than only the assumed one. Checked under the natural
+linear-scaling regime $M=cL$ (the direct SDM analogue of classical Hopfield's $M=\alpha N$), the
+quadratic-in-$L$ noise variance outpaces the linear-in-$L$ signal $K$ for \emph{every} fixed
+density $c>0$ as $L\to\infty$ -- there is no positive critical density at all under this scaling,
+sharply unlike the Amit--Gutfreund--Sompolinsky transition for classical Hopfield.
 
 \paragraph{Why.} SDM activates each hard location \emph{independently} with probability $\pi$,
 rather than activating an \emph{exactly}-sized combinatorial subset the way $k$-winners-take-all
