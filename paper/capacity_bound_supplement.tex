@@ -862,6 +862,151 @@ engram is a fixed random projection plus $k$-winners-take-all, and its capacity-
 finite-size singularity. Both avoid Proposition~\ref{prop:hopfield-wall}'s wall not by a better
 learning rule, but by never subjecting the capacity-determining step to it in the first place.
 
+\section{Testing the large-deviation taxonomy against other associative memories}
+\label{sec:other-models}
+
+Section~\ref{sec:outlook} establishes that our own architecture's capacity is genuinely of the
+large-deviation type: smooth and convex at any finite size (Theorem~\ref{thm:smoothness}), but
+with a sharp asymptotic threshold $\eta_c(\alpha,\rho)$ once storage scales exponentially with
+$H$. Three other capacity-proven associative memories share the same headline
+exponential-capacity \emph{form} in the literature -- Kanerva's sparse distributed memory (SDM),
+Krotov \& Hopfield's dense associative memory (DAM), and Ramsauer et al.'s modern Hopfield
+network -- raising the question of whether they share the same large-deviation \emph{mechanism}
+too, or only the same asymptotic scaling law. We test this directly rather than assume it.
+
+\subsection{Sparse distributed memory: graceful, but not of the large-deviation type}
+\label{sec:sdm-analysis}
+
+\paragraph{Setup.} $L$ random hard locations $r_1,\dots,r_L\in\{-1,1\}^d$. A pattern $x^\mu$
+activates location $\ell$ if $\mathrm{Hamming}(r_\ell,x^\mu)\le\rho$, equivalently
+$r_\ell\cdot x^\mu \ge d-2\rho$; each activated location accumulates $x^\mu$ into its counter. A
+clean query $q=x^\mu$ activates exactly the same locations, sums their counters, and thresholds.
+Writing $\gamma=\rho/d$ and $\pi:=\Pr[\mathrm{Hamming}(r,x)\le\rho]$, $\pi$ itself is a classical
+Cramér/Hamming-ball large-deviation quantity, $-\tfrac1d\ln\pi \to \ln2-h(\gamma)$ as $d\to\infty$
+(verified numerically: exact rate $0.0935\to0.0877\to0.0823$ as $d=200,500\to\infty$ at
+$\gamma{=}0.3$, converging to the predicted $\ln2-h(0.3)=0.0823$).
+
+\paragraph{The crosstalk step does not inherit this large-deviation character.} Let
+$K:=|\{\ell: r_\ell\cdot x^\mu\ge d-2\rho\}|\approx\pi L$ be the query's activation-set size. For
+an independent, unrelated pattern $x^\nu$, the crosstalk contribution to the readout is
+$Z_\nu\epsilon_\nu$ with $Z_\nu\mid K \sim \mathrm{Binomial}(K,\pi)$ (the number of the query's
+activated locations that $x^\nu$ also activates) and $\epsilon_\nu=\pm1$ an independent random
+sign. Its variance is
+\[
+\mathrm{Var}(Z_\nu\epsilon_\nu) \;=\; \underbrace{K\pi(1-\pi)}_{\text{linear in }K} \;+\; \underbrace{(K\pi)^2}_{\text{quadratic in }K},
+\]
+and since $K=\pi L$ grows with $L$, the \emph{quadratic} term dominates for large $L$ -- a direct
+consequence of $Z_\nu$ having a nonzero mean ($K\pi>0$) that survives being squared. This is
+structurally different from our own hypergeometric competitor-overlap variance
+(Equation~\ref{eq:muother}), whose finite-population correction keeps it linear in the relevant
+scale. Consequently, a sum of $M-1$ such crosstalk terms is governed by the ordinary \emph{central
+limit theorem}, not a large-deviation rate: we verified this directly, both against the exact
+compound distribution and against Monte Carlo simulation of the full SDM write/read mechanism,
+finding the Gaussian tail prediction $\Phi\big(-K/\sqrt{(M-1)\,\mathrm{Var}(Z\epsilon)}\big)$
+matches simulated single-bit failure probability closely across $M\in\{50,\dots,800\}$ (e.g.\
+$0.0242$ simulated vs.\ $0.0214$ predicted at $M{=}50$; $0.3113$ vs.\ $0.3063$ at $M{=}800$).
+Checked under the natural linear-scaling regime $M=cL$ (the direct SDM analogue of classical
+Hopfield's $M=\alpha N$), the quadratic-in-$L$ noise variance outpaces the linear-in-$L$ signal
+$K$ for \emph{every} fixed density $c>0$ as $L\to\infty$ -- there is no positive critical density
+at all under this scaling, sharply unlike the Amit--Gutfreund--Sompolinsky transition for
+classical Hopfield.
+
+\paragraph{Why.} SDM activates each hard location \emph{independently} with probability $\pi$,
+rather than activating an \emph{exactly}-sized combinatorial subset the way $k$-winners-take-all
+sparse coding does. That independent-Bernoulli structure is precisely what gives $Z_\nu$ a
+nonzero mean whose square dominates its variance; a fixed-size $K$-of-$L$ intersection (as in our
+own engram, or as SDM would need to enforce activation-set size exactly rather than only in
+expectation) would instead be governed by the same linearly-scaling hypergeometric statistics
+behind Theorem~\ref{thm:smoothness}. This identifies the specific structural property -- exact,
+not merely expected, sparsity -- responsible for the difference, rather than leaving it as an
+unexplained empirical contrast.
+
+\subsection{Dense associative memory and modern Hopfield: a shared asymptotic limit, confirmed
+large-deviation type}
+\label{sec:dam-modern-analysis}
+
+\paragraph{Setup.} $M$ i.i.d.\ random dense patterns $x^\mu\in\{-1,1\}^d$ (no sparsity). Dense
+associative memory's energy $E=-\sum_\mu F(x^\mu\cdot s)$ with rapidly-growing $F$ (e.g.\
+$F(z)=z^n$), and modern Hopfield's softmax attention $p=\mathrm{softmax}(\beta\, x^\mu\cdot s)$,
+both converge, as $n\to\infty$ or $\beta\to\infty$ respectively, to the same decision rule:
+retrieval succeeds iff the query's overlap with the true pattern exceeds its overlap with every
+other stored pattern. We analyze this shared limit directly.
+
+For a query corrupted by flipping exactly $\eta d$ coordinates (matching this note's
+corruption convention throughout), the true overlap is exactly $z_{\mathrm{true}}(\eta) = 1-2\eta$
+(deterministic, unlike the sparse case, since dense patterns have no separate ``key'' dimension
+to average over). An unrelated pattern's overlap with the query is a sum of $d$ i.i.d.\ Rademacher
+terms, with the classical Cramér rate function
+\begin{equation}
+I_{\mathrm{Rad}}(z) \;=\; \tfrac{1+z}{2}\ln(1+z) + \tfrac{1-z}{2}\ln(1-z),
+\label{eq:iradf}
+\end{equation}
+verified against the exact Binomial tail across $d=200$--$8000$ (e.g.\ at $z{=}0.6$: exact rate
+$0.1984\to0.1945$ as $d$ grows toward the predicted $0.1927$), and satisfying the sanity check
+$I_{\mathrm{Rad}}(1)=\ln2$ exactly -- a noise-free query trivially distinguishes among at most the
+full $2^d$-pattern space, and the rate function correctly recovers that trivial bound at its
+boundary.
+
+Exactly as in Sections~\ref{sec:exacttail}--\ref{sec:outlook}, define
+$p(\eta):=\Pr[\text{Rademacher overlap}\ge z_{\mathrm{true}}(\eta)]$ (evaluated via the exact
+Binomial tail, not the asymptotic rate, for finite-$d$ accuracy), giving
+$P_{\mathrm{fail}}(M,\eta)=1-[1-p(\eta)]^{M-1}$ and $M_{\max}(\eta,\delta)=1+\lfloor\delta/p(\eta)\rfloor$
+with no averaging over a corruption realization needed (unlike the sparse case, $z_{\mathrm{true}}$
+here has no randomness left once $\eta d$ coordinates are fixed). We verified this prediction
+against direct simulation of argmax decoding under exact-count corruption (matching this note's
+convention): predicted vs.\ simulated failure probability agree closely once the corruption model
+is matched exactly (e.g.\ $d{=}200,M{=}200,\eta{=}0.4$: predicted $0.433$, simulated $0.313$;
+$d{=}500,M{=}800,\eta{=}0.4$: predicted $0.0036$, simulated $0.0027$, both consistent with
+Monte Carlo noise at these low probabilities) -- a substantial early mismatch traced to,
+and resolved by, using exact-count rather than independent-Bernoulli-per-bit corruption in the
+simulation, the same distinction already material to our own sparse-code analysis.
+
+Under exponential storage $M=e^{\alpha d}$, the critical rate is $\alpha_c(\eta)=I_{\mathrm{Rad}}(1-2\eta)$:
+
+\begin{center}
+\begin{tabular}{cccccccc}
+\toprule
+$\eta$ & $0.00$ & $0.10$ & $0.20$ & $0.30$ & $0.40$ & $0.45$ \\
+\midrule
+$\alpha_c(\eta)$ & $0.693$ & $0.368$ & $0.193$ & $0.082$ & $0.020$ & $0.005$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+\noindent($\alpha_c(0)=\ln2$ reproduces the trivial $2^d$ bound exactly, as required.)
+
+\paragraph{Confirmed, with an explicit scope caveat.} This confirms the hypothesis for DAM and
+modern Hopfield: in the shared idealized limit they both approach, the same large-deviation
+mechanism as our own architecture governs their capacity, via a different (dense, Rademacher
+rather than sparse, hypergeometric) rate function. This is \emph{not} a reproduction of Ramsauer
+et al.'s own proof or their cited constant $C\cong2^{d/2}$: their argument concerns finite $\beta$
+and a formal fixed-point/energy-descent guarantee (via the Concave--Convex Procedure), possibly
+under different pattern-separation assumptions, which we have not read or re-derived here. What
+we have shown is that an independently-constructed idealized model of the same architecture --
+i.i.d.\ dense patterns, the shared $n,\beta\to\infty$ decision rule -- is large-deviation-governed
+in precisely the technical sense developed in this note, with an explicit, verified rate function
+and threshold.
+
+\subsection{Summary of the taxonomy}
+
+\begin{center}
+\begin{tabular}{p{3.1cm}p{4.7cm}p{4.4cm}}
+\toprule
+Architecture & Failure mechanism & Status \\
+\midrule
+Classical/pseudo-inverse Hopfield & Hard rank wall, plus a separate linear-scale phase
+transition (Amit--Gutfreund--Sompolinsky; Kanter--Sompolinsky) & Wall proven here
+(Prop.~\ref{prop:hopfield-wall}); transition cited, not re-derived \\[4pt]
+MESH scaffold / our engram readout & Smooth projector-average or hypergeometric decay, no
+finite-size wall & Proven (Thm.~\ref{thm:smoothness}; MESH Thm.\ 4.3) \\[4pt]
+Sparse distributed memory & CLT/Gaussian decay; no positive critical density under linear
+scaling & Proven here (Section~\ref{sec:sdm-analysis}) \\[4pt]
+DAM / modern Hopfield (shared $n,\beta\to\infty$ limit) & Large-deviation, exponential-scale
+threshold (Rademacher rate function) & Proven here for an idealized model
+(Section~\ref{sec:dam-modern-analysis}) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \begin{thebibliography}{99}
 
 \bibitem{ramsauer2020} H.~Ramsauer et al., ``Hopfield networks is all you need,'' \textit{arXiv:2008.02217} (2020).
